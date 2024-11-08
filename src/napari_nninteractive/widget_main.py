@@ -14,6 +14,10 @@ from qtpy.QtWidgets import QWidget
 from napari_nninteractive.widget_controls import LayerControls
 
 
+class nnInteractiveWidget_(LayerControls):
+    pass
+
+
 class nnInteractiveWidget(LayerControls):
     """
     A widget for the nnInteractive plugin in Napari that manages model inference sessions
@@ -35,7 +39,6 @@ class nnInteractiveWidget(LayerControls):
             event (Any): The event triggering the auto-run, with information about
                 the layer action and data.
         """
-
         if (
             self.run_ckbx.isChecked()
             and event.action == ActionType.ADDED
@@ -78,15 +81,32 @@ class nnInteractiveWidget(LayerControls):
         self.session.set_image(_data, _properties)
         self.session.set_target_buffer(self._data_res)
 
-        self.label_layer_name = f"nnInteractive - Label Layer - {self.session_cfg["name"]}"
+        self.label_layer_name = f"nnInteractive - Label Layer - {self.session_cfg["name"]} - {self.session_cfg["model"]}"
+        if self.label_layer_name in self._viewer.layers:
+            self._viewer.layers.remove(self.label_layer_name)
+
         _layer_res = Labels(self._data_res, name=self.label_layer_name, affine=_layer.affine)
         self._viewer.add_layer(_layer_res)
 
-    def on_reset(self):
+    def _reset(self):
         """Reset the Interactions of current session"""
-        super().on_reset()
+        super()._reset()
         if self.session is not None:
             self.session.reset_interactions()
+
+    def _reset_interactions(self):
+        if self.session is not None:
+            self.session.reset_interactions()
+            self.clear_layers()
+
+            self.label_layer_name = f"nnInteractive - Label Layer - {self.session_cfg["name"]} - {self.session_cfg["model"]}"
+            if self.label_layer_name in self._viewer.layers:
+                self._viewer.layers.remove(self.label_layer_name)
+
+            _layer_res = Labels(
+                self._data_res, name=self.label_layer_name, affine=self.session_cfg["affine"]
+            )
+            self._viewer.add_layer(_layer_res)
 
     def on_model_selection(self):
         """Reset the Session if another model is selected"""
@@ -108,7 +128,6 @@ class nnInteractiveWidget(LayerControls):
                 _min = np.min(data, axis=0)
                 _max = np.max(data, axis=0)
                 bbox = [[_min[0], _max[0]], [_min[1], _max[1]], [_min[2], _max[2]]]
-
                 self.session.add_bbox_interaction(bbox, self.prompt_button.index == 0)
             elif index == 2:
                 self.session.add_scribble_interaction(data, self.prompt_button.index == 0)

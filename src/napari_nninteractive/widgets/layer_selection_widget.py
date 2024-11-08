@@ -1,3 +1,4 @@
+from napari.layers.base._base_constants import ActionType
 from napari.viewer import Viewer
 from qtpy.QtWidgets import QComboBox
 
@@ -25,16 +26,15 @@ class LayerSelectionWidget(QComboBox):
         Args:
             event: The Napari event triggered by a layer being added or removed.
         """
-        layers = event.source
-        layer_names = [
-            layer.name
-            for layer in layers
-            if self.layer_type is None or isinstance(layer, self.layer_type)
-        ]
-        self.value = self.currentText()
-        self.clear()
-        self.addItems(layer_names)
-        self.setCurrentText(self.value)
+
+        layer = event.value
+        if isinstance(layer, self.layer_type):
+            if event.type == "removed":
+                item_index = self.findText(layer.name)
+                if item_index != -1:
+                    self.removeItem(item_index)
+            elif event.type == "inserted":
+                self.addItem(layer.name)
 
     def connect(self, viewer: Viewer):
         """

@@ -64,6 +64,7 @@ class LayerControls(BaseGUI):
             ndim=self.session_cfg["ndim"],
             affine=self.session_cfg["affine"],
             prompt_index=self.prompt_button.index,
+            opacity=0.5,
         )
         bbox_layer.events.data.connect(self._auto_run)
         self._viewer.add_layer(bbox_layer)
@@ -136,7 +137,8 @@ class LayerControls(BaseGUI):
         _index = self.interaction_button.index
         _layer_name = self.layer_dict.get(_index)
         if _layer_name is not None and _layer_name in self._viewer.layers:
-            _data = self._viewer.layers[_layer_name].run()
+            _ = self._viewer.layers[_layer_name].run()
+            _data = self._viewer.layers[_layer_name].data[-1]
             if _data is not None:
                 self.inference(_data, _index)
 

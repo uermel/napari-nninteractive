@@ -1,6 +1,6 @@
 import warnings
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from napari.layers.image.image import Image
 from napari.viewer import Viewer
@@ -50,10 +50,11 @@ class BaseGUI(QWidget):
 
     def _unlock_session(self):
         """Unlocks the session, enabling model and image selection, and initializing controls."""
-        self.model_selection.setEnabled(True)
-        self.bg_preprocessing_ckbx.setEnabled(True)
-        self.image_selection.setEnabled(True)
+        # self.model_selection.setEnabled(True)
+        # self.bg_preprocessing_ckbx.setEnabled(True)
+        # self.image_selection.setEnabled(True)
         self.init_button.setEnabled(True)
+        # self.reset_interactions_button.setEnabled(False)
 
         self.reset_button.setEnabled(False)
         self.prompt_button.setEnabled(False)
@@ -65,10 +66,11 @@ class BaseGUI(QWidget):
 
     def _lock_session(self):
         """Locks the session, disabling model and image selection, and enabling control buttons."""
-        self.model_selection.setEnabled(False)
-        self.bg_preprocessing_ckbx.setEnabled(False)
-        self.image_selection.setEnabled(False)
+        # self.model_selection.setEnabled(False)
+        # self.bg_preprocessing_ckbx.setEnabled(False)
+        # self.image_selection.setEnabled(False)
         self.init_button.setEnabled(False)
+        # self.reset_interactions_button.setEnabled(True)
 
         self.reset_button.setEnabled(True)
         self.prompt_button.setEnabled(True)
@@ -95,7 +97,7 @@ class BaseGUI(QWidget):
                 UserWarning,
                 stacklevel=2,
             )
-        self.model_selection = add_tooltipcombobox(_layout, _folders, self.on_model_selection)
+        self.model_selection = add_tooltipcombobox(_layout, _folders, self._reset)
         self.model_selection.setFixedWidth(250)
 
         self.bg_preprocessing_ckbx = add_checkbox(
@@ -113,7 +115,9 @@ class BaseGUI(QWidget):
         _group_box = QGroupBox("Image Selection:")
         _layout = QVBoxLayout()
 
-        self.image_selection = add_layerselection(_layout, viewer=self._viewer, layer_type=Image)
+        self.image_selection = add_layerselection(
+            _layout, viewer=self._viewer, layer_type=Image, function=self._reset
+        )
         self.image_selection.setFixedWidth(250)
 
         _group_box.setLayout(_layout)
@@ -128,8 +132,17 @@ class BaseGUI(QWidget):
             _layout, "Initialize", self.on_init, tooltips="Initialize the Model and Image Pair"
         )
         self.reset_button = add_button(
-            _layout, "Reset", self.on_reset, tooltips="Reset the Model and Image Pair"
+            _layout,
+            "Reset",
+            self._reset_interactions,
+            tooltips="Keep Model and Image Pair, just reset the interactions",
         )
+        # self.reset_interactions_button = add_button(
+        #     _layout,
+        #     "Reset Interactions",
+        #     self.on_reset_interactions,
+        #     tooltips="Keep Model and Image Pair, just reset the interactions",
+        # )
 
         _group_box.setLayout(_layout)
         return _group_box
@@ -192,7 +205,7 @@ class BaseGUI(QWidget):
             }
             self._lock_session()
 
-    def on_reset(self):
+    def _reset(self):
         """Resets the session configuration and unlocks the session controls."""
         self.session_cfg = None
         self.clear_layers()
@@ -212,8 +225,14 @@ class BaseGUI(QWidget):
         """Executes the run operation based on the current session configuration."""
         print("on_run")
 
+    def _auto_run(self, event: Any):
+        print("auto_run")
+
     def clear_layers(self):
         """Placeholder method for clearing layers in the viewer."""
 
     def on_model_selection(self):
         print("on_model_selection")
+
+    def _reset_interactions(self):
+        print("_reset_interactions")
