@@ -6,25 +6,9 @@ visibility: public
 categories: ["Annotation", "Segmentation", "Acquisition"]
 contributions:
   commands:
-    - id: napari-nninteractive.make_container_widget
-      python_name: napari_nninteractive:ImageThreshold
-      title: Make threshold Container widget
-    - id: napari-nninteractive.make_magic_widget
-      python_name: napari_nninteractive:threshold_magic_widget
-      title: Make threshold magic widget
-    - id: napari-nninteractive.make_function_widget
-      python_name: napari_nninteractive:threshold_autogenerate_widget
-      title: Make threshold function widget
-    - id: napari-nninteractive.make_qwidget
-      python_name: napari_nninteractive:ExampleQWidget
-      title: Make example QWidget
+    - id: napari-nninteractive.nnInteractiveWidget
+      python_name: napari_nninteractive:nnInteractiveWidget
+      title: nnInteractive
   widgets:
-    - command: napari-nninteractive.make_container_widget
-      display_name: Container Threshold
-    - command: napari-nninteractive.make_magic_widget
-      display_name: Magic Threshold
-    - command: napari-nninteractive.make_function_widget
-      autogenerate: true
-      display_name: Autogenerate Threshold
-    - command: napari-nninteractive.make_qwidget
-      display_name: Example QWidget
+    - command: napari-nninteractive.nnInteractiveWidget
+      display_name: nnInteractive

@@ -1,17 +1,6 @@
-# napari-nninteractive
+# Napari-nnInteractive
 
-[![License Apache Software License 2.0](https://img.shields.io/pypi/l/napari-nninteractive.svg?color=green)](https://github.com/Lars-Kraemer/napari-nninteractive/raw/main/LICENSE)
-[![PyPI](https://img.shields.io/pypi/v/napari-nninteractive.svg?color=green)](https://pypi.org/project/napari-nninteractive)
-[![Python Version](https://img.shields.io/pypi/pyversions/napari-nninteractive.svg?color=green)](https://python.org)
-[![tests](https://github.com/Lars-Kraemer/napari-nninteractive/workflows/tests/badge.svg)](https://github.com/Lars-Kraemer/napari-nninteractive/actions)
-[![codecov](https://codecov.io/gh/Lars-Kraemer/napari-nninteractive/branch/main/graph/badge.svg)](https://codecov.io/gh/Lars-Kraemer/napari-nninteractive)
-[![napari hub](https://img.shields.io/endpoint?url=https://api.napari-hub.org/shields/napari-nninteractive)](https://napari-hub.org/plugins/napari-nninteractive)
-
-nnInteractive plugin for Napari
-
-----------------------------------
-
-This [napari] plugin was generated with [copier] using the [napari-plugin-template].
+______________________________________________________________________
 
 <!--
 Don't miss the full getting started guide to set up your new package:
@@ -23,39 +12,78 @@ https://napari.org/stable/plugins/index.html
 
 ## Installation
 
-You can install `napari-nninteractive` via [pip]:
+##### 1. Use this python version:
 
-    pip install napari-nninteractive
+```
+conda create -n nnInteractive python=3.12
+conda activate nnInteractive
+```
 
+##### 2. Install nnUNet (+Set the Paths) (branch project/nnInteractive)
 
+```
+git clone git@git.dkfz.de:mic/internal/nnu-net.git
+cd nnu-net
+git checkout project/nnInteractive
+pip install -e ./
+```
 
+##### 3. Install some more stuff require for nnInteractive
 
-## Contributing
+```
+pip install git+https://github.com/FabianIsensee/BatchViewer.git
+pip install git+https://github.com/dalcalab/voxynth.git
+```
 
-Contributions are very welcome. Tests can be run with [tox], please ensure
-the coverage at least stays the same before you submit a pull request.
+##### 4. Install this repository + dependencies via
 
-## License
+```
+pip install -e ./
+```
 
-Distributed under the terms of the [Apache Software License 2.0] license,
-"napari-nninteractive" is free and open source software
+##### 5. Place nnInteractive Checkpoints ("Dataset224_nnInteractive") in your nnUNet_results folder
 
-## Issues
+______________________________________________________________________
 
-If you encounter any problems, please [file an issue] along with a detailed description.
+## Getting Started
 
-[napari]: https://github.com/napari/napari
+Use one of these three options to start napari and activate the plugin.
+Afterward, Drag and drop your images into napari.
+
+\***Note if getting asked which plugin to use for opening .nii.gz files use napari-nifti.**
+
+a) Start napari, then Plugins -> nnInteractive.
+
+```
+napari
+```
+
+b) Run this to start napari with the plugin already started.
+
+```
+napari -w napari-nninteractive
+```
+
+c) Run this to start napari with the plugin and open an image directly
+
+```
+napari demo_data/AbdominalOrganSegmentation_img0004_0000.nii.gz -w napari-nninteractive
+```
+
+______________________________________________________________________
+
+## Acknowledgments
+
+<p align="left">
+  <img src="imgs/Logos/HI_Logo.png" width="150"> &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="imgs/Logos/DKFZ_Logo.png" width="500">
+</p>
+
+This repository is developed and maintained by the Applied Computer Vision Lab (ACVL)
+of [Helmholtz Imaging](https://www.helmholtz-imaging.de/).
+
+This [napari] plugin was generated with [copier] using the [napari-plugin-template].
+
 [copier]: https://copier.readthedocs.io/en/stable/
-[@napari]: https://github.com/napari
-[MIT]: http://opensource.org/licenses/MIT
-[BSD-3]: http://opensource.org/licenses/BSD-3-Clause
-[GNU GPL v3.0]: http://www.gnu.org/licenses/gpl-3.0.txt
-[GNU LGPL v3.0]: http://www.gnu.org/licenses/lgpl-3.0.txt
-[Apache Software License 2.0]: http://www.apache.org/licenses/LICENSE-2.0
-[Mozilla Public License 2.0]: https://www.mozilla.org/media/MPL/2.0/index.txt
-[napari-plugin-template]: https://github.com/napari/napari-plugin-template
-
 [napari]: https://github.com/napari/napari
-[tox]: https://tox.readthedocs.io/en/latest/
-[pip]: https://pypi.org/project/pip/
-[PyPI]: https://pypi.org/
+[napari-plugin-template]: https://github.com/napari/napari-plugin-template
