@@ -1,55 +1,65 @@
 from napari.layers import Labels
+from napari_nninteractive.layers.abstract_layer import BaseLayerClass
+from napari.layers.base._base_constants import ActionType
+from napari.utils.events import Event
 
 
-class ScibbleLayer(Labels):
-    def __init__(self, data=None, prompt_index=0, *args, **kwargs):
-        super().__init__(data, *args, **kwargs)
-        self.prompt_index = prompt_index
-        self.data_current = None
-        # Connect the custom event handler for new scribbles
+class ScibbleLayer(BaseLayerClass, Labels):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.colormap = {
+            None: None,
+            1: self.colors[self.prompt_index],
+            2: self.colors_set[0],
+            3: self.colors_set[1],
+        }
 
-        self.events.data.connect(self.reset_to_single_scribble)
+        self._is_free = False
+        self.mouse_drag_callbacks.append(self.on_draw)
+        # self.events.add(finished=Event)
 
-    def run(self):
+    def replace_color(self, _color):
+        self.colormap = {
+            None: None,
+            1: self.colors[self.prompt_index],
+            2: self.colors_set[0],
+            3: self.colors_set[1],
+        }
+        self.refresh()
+
+    def _add(self, data, *arg, **kwargs):
         pass
 
-    def set_prompt(self, index):
-        self.prompt_index = index
+    def run(self):
+        self.data[self.data == 1] = self.prompt_index + 2
+        self._is_free = True
+        self.refresh()
 
-    def reset_to_single_scribble(self, *args, **kwargs):
-        # Create a copy of the data to detect changes
-        print("Hallo")
-        print(self.data.shape)
+    def remove_last(self):
+        self.undo()
 
-    # def set_prompt(self):
-    #     coord = self.data_current
-    #     self.remove()
-    #     self.add()
+    def _commit_staged_history(self):
+        super()._commit_staged_history()
+        self._is_free = False
+        self.events.finished(action=ActionType.ADDED, value="ADD")
 
-    # def add(self, coord):
-    #     if self.data_current is None:
-    #         self.data_current = coord.copy()
-    #         self.add()
-    #     else:
-    #         self.data_current = coord.copy()
-    #         self.remove()
-    #         self.add()
-    #
-    # def run(self):
-    #     self.save_current()
-    #     self.remove()
-    #     self.add()
-    #     return
+    def on_draw(self, layer, event):
+        if not self._is_free:
+            self.remove_last()
+            self.colormap = {
+                None: None,
+                1: self.colors[self.prompt_index],
+                2: self.colors_set[0],
+                3: self.colors_set[1],
+            }
+            self._is_free = True
+            self.refresh()
+        self.colormap = {
+            None: None,
+            1: self.colors[self.prompt_index],
+            2: self.colors_set[0],
+            3: self.colors_set[1],
+        }
 
-    #
-    # # def paint(self, *args, **kwargs):
-    # #     print("YY")
-    #
-    # def _draw(self, new_label, last_cursor_coord, coordinates):
-    #     print(new_label)
-    #     print(last_cursor_coord)
-    #     print(coordinates)
-    #
-    #     print("data.shape")
-    #     super()._draw(new_label, last_cursor_coord, coordinates)
-    #
+    def get_last(self):
+        return (self.data == 1).astype(int)

@@ -3,15 +3,7 @@ from typing import Callable, List, Optional
 from napari.layers import Layer
 from napari.viewer import Viewer
 from qtpy.QtGui import QKeySequence
-from qtpy.QtWidgets import (
-    QCheckBox,
-    QComboBox,
-    QLabel,
-    QLayout,
-    QPushButton,
-    QShortcut,
-    QWidget,
-)
+from qtpy.QtWidgets import QCheckBox, QComboBox, QLabel, QLayout, QPushButton, QShortcut, QWidget
 
 from napari_nninteractive.widgets.layer_selection_widget import LayerSelectionWidget
 from napari_nninteractive.widgets.tooltip_combobox import ToolTipQComboBox

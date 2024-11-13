@@ -75,7 +75,6 @@ class BaseGUI(QWidget):
         self.reset_button.setEnabled(True)
         self.prompt_button.setEnabled(True)
         self.interaction_button.setEnabled(True)
-        self.interaction_button.buttons[2].setEnabled(False)
         self.run_button.setEnabled(True)
         self.run_ckbx.setEnabled(True)
 

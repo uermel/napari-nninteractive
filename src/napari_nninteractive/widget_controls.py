@@ -51,7 +51,8 @@ class LayerControls(BaseGUI):
             size=5,
             prompt_index=self.prompt_button.index,
         )
-        point_layer.events.data.connect(self._auto_run)
+        # point_layer.events.data.connect(self._auto_run)
+        point_layer.events.finished.connect(self._auto_run)
         self._viewer.add_layer(point_layer)
 
         # self._viewer.layers[self.point_layer_name].events.data_current.connect(self._auto_run)
@@ -67,6 +68,7 @@ class LayerControls(BaseGUI):
             opacity=0.5,
         )
         bbox_layer.events.data.connect(self._auto_run)
+        # bbox_layer.events.finished.connect(self._auto_run)
         self._viewer.add_layer(bbox_layer)
 
         # self._viewer.layers[self.bbox_layer_name].events.data.connect(self._auto_run)
@@ -75,11 +77,12 @@ class LayerControls(BaseGUI):
         """Adds a scribble layer to the viewer with an initial blank data array."""
         _data = np.zeros(self.session_cfg["shape"], dtype=np.uint8)
         scribble_layer = ScibbleLayer(
-            _data,
+            data=_data,
             name=self.scribble_layer_name,
             affine=self.session_cfg["affine"],
             prompt_index=self.prompt_button.index,
         )
+        scribble_layer.events.finished.connect(self._auto_run)
         self._viewer.add_layer(scribble_layer)
 
     def clear_layers(self):
@@ -138,7 +141,7 @@ class LayerControls(BaseGUI):
         _layer_name = self.layer_dict.get(_index)
         if _layer_name is not None and _layer_name in self._viewer.layers:
             _ = self._viewer.layers[_layer_name].run()
-            _data = self._viewer.layers[_layer_name].data[-1]
+            _data = self._viewer.layers[_layer_name].get_last()  # .data[-1]
             if _data is not None:
                 self.inference(_data, _index)
 

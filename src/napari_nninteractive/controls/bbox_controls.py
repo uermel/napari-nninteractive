@@ -1,7 +1,4 @@
-from napari._qt.layer_controls.qt_shapes_controls import (
-    QtShapesControls,
-    action_manager,
-)
+from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls, action_manager
 
 
 class CustomQtBBoxControls(QtShapesControls):

@@ -6,12 +6,12 @@ import torch
 from napari.layers import Labels
 from napari.layers.base._base_constants import ActionType
 from napari.viewer import Viewer
-from nnunetv2.inference.nnInteractive.interactive_inference import (
-    nnInteractiveInferenceSession,
-)
+from nnunetv2.inference.nnInteractive.interactive_inference import nnInteractiveInferenceSession
 from qtpy.QtWidgets import QWidget
 
 from napari_nninteractive.widget_controls import LayerControls
+from napari_nninteractive.utils.utils import determine_layer_index
+from napari.utils.colormaps import label_colormap
 
 
 class nnInteractiveWidget_(LayerControls):
@@ -30,6 +30,7 @@ class nnInteractiveWidget(LayerControls):
         """
         super().__init__(viewer, parent)
         self.session = None
+        self.colormap = label_colormap(49, seed=0.5, background_value=0)
 
     def _auto_run(self, event: Any):
         """
@@ -42,7 +43,7 @@ class nnInteractiveWidget(LayerControls):
         if (
             self.run_ckbx.isChecked()
             and event.action == ActionType.ADDED
-            and self._viewer.layers[event.source.name].data_current is not None
+            and not self._viewer.layers[event.source.name].is_free()
         ):
             self.on_run()
 
@@ -82,10 +83,19 @@ class nnInteractiveWidget(LayerControls):
         self.session.set_target_buffer(self._data_res)
 
         self.label_layer_name = f"nnInteractive - Label Layer - {self.session_cfg["name"]} - {self.session_cfg["model"]}"
+
         if self.label_layer_name in self._viewer.layers:
             self._viewer.layers.remove(self.label_layer_name)
 
-        _layer_res = Labels(self._data_res, name=self.label_layer_name, affine=_layer.affine)
+        # TODO Catch more than 49 objects
+        _cmap = {
+            None: (0, 0, 0, 0),
+            0: (0, 0, 0, 0),
+            1: self.colormap.map([1])[0],
+        }  # +1 for skipping bg color
+        _layer_res = Labels(
+            self._data_res, name=self.label_layer_name, affine=_layer.affine, colormap=_cmap
+        )
         self._viewer.add_layer(_layer_res)
 
     def _reset(self):
@@ -96,15 +106,29 @@ class nnInteractiveWidget(LayerControls):
 
     def _reset_interactions(self):
         if self.session is not None:
+
+            _index = determine_layer_index(
+                self.label_layer_name,
+                [layer.name for layer in self._viewer.layers],
+                splitter=" - object ",
+            )
+            _layer = self._viewer.layers[self.label_layer_name]
+            _layer.name = f"{_layer.name} - object {_index}"
+            _layer.data = _layer.data.copy()
+
             self.session.reset_interactions()
             self.clear_layers()
-
-            self.label_layer_name = f"nnInteractive - Label Layer - {self.session_cfg["name"]} - {self.session_cfg["model"]}"
-            if self.label_layer_name in self._viewer.layers:
-                self._viewer.layers.remove(self.label_layer_name)
+            _cmap = {
+                None: (0, 0, 0, 0),
+                0: (0, 0, 0, 0),
+                1: self.colormap.map([_index + 2])[0],
+            }  # +1 for next layer, +1 for skipping bg color
 
             _layer_res = Labels(
-                self._data_res, name=self.label_layer_name, affine=self.session_cfg["affine"]
+                self._data_res,
+                name=self.label_layer_name,
+                affine=self.session_cfg["affine"],
+                colormap=_cmap,
             )
             self._viewer.add_layer(_layer_res)
 
@@ -121,7 +145,9 @@ class nnInteractiveWidget(LayerControls):
             index (int): The index of the layer type, corresponding to the layer_dict key.
         """
         if data is not None:
+
             if index == 0:
+                self._viewer.layers[self.point_layer_name].refresh(force=True)
                 self.session.add_point_interaction(data, self.prompt_button.index == 0)
             elif index == 1:
                 # add_bbox_interaction expects [[xmin, xmax], [ymin, ymax], [zmin, zmax]]
@@ -130,5 +156,7 @@ class nnInteractiveWidget(LayerControls):
                 bbox = [[_min[0], _max[0]], [_min[1], _max[1]], [_min[2], _max[2]]]
                 self.session.add_bbox_interaction(bbox, self.prompt_button.index == 0)
             elif index == 2:
+                data = data[None]
                 self.session.add_scribble_interaction(data, self.prompt_button.index == 0)
+
             self._viewer.layers[self.label_layer_name].refresh()
