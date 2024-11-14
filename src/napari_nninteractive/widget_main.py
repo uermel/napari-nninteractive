@@ -3,18 +3,17 @@ from typing import Any, Optional
 
 import numpy as np
 import torch
-from napari.layers import Labels
-from napari.layers.base._base_constants import ActionType
+from napari.utils.colormaps import label_colormap
 from napari.viewer import Viewer
 from nnunetv2.inference.nnInteractive.interactive_inference import nnInteractiveInferenceSession
 from qtpy.QtWidgets import QWidget
 
 from napari_nninteractive.widget_controls import LayerControls
-from napari_nninteractive.utils.utils import determine_layer_index
-from napari.utils.colormaps import label_colormap
 
 
 class nnInteractiveWidget_(LayerControls):
+    """Just a Debug Dummy without all the machine learning stuff"""
+
     pass
 
 
@@ -32,21 +31,13 @@ class nnInteractiveWidget(LayerControls):
         self.session = None
         self.colormap = label_colormap(49, seed=0.5, background_value=0)
 
-    def _auto_run(self, event: Any):
-        """
-        Automatically run an action if a layer's checkbox is checked and data is added.
+    # Base Behaviour
+    def _reset_session(self):
+        """Reset the current session"""
+        super()._reset_session()
+        self.session = None
 
-        Args:
-            event (Any): The event triggering the auto-run, with information about
-                the layer action and data.
-        """
-        if (
-            self.run_ckbx.isChecked()
-            and event.action == ActionType.ADDED
-            and not self._viewer.layers[event.source.name].is_free()
-        ):
-            self.on_run()
-
+    # Event Handlers
     def on_init(self, *args, **kwargs):
         """
         Initialize the inference session and setup layers for interaction.
@@ -73,69 +64,20 @@ class nnInteractiveWidget(LayerControls):
                 5,
                 "checkpoint_best.pth",
             )
+        self._scribble_brush_size = self.session.recommended_scribble_thickness
+        _data = self._viewer.layers[self.session_cfg["name"]].data
+        _data = _data[np.newaxis, ...]
 
-        _layer = self._viewer.layers[self.session_cfg["name"]]
-        _data = _layer.data[np.newaxis, ...]
-        _properties = {"spacing": _layer.scale}
-        self._data_res = np.zeros(_data.shape[1:], dtype=np.uint8)
+        self.session.set_image(_data, {"spacing": self.session_cfg["spacing"]})
+        self.session.set_target_buffer(self._data_result)
 
-        self.session.set_image(_data, _properties)
-        self.session.set_target_buffer(self._data_res)
-
-        self.label_layer_name = f"nnInteractive - Label Layer - {self.session_cfg["name"]} - {self.session_cfg["model"]}"
-
-        if self.label_layer_name in self._viewer.layers:
-            self._viewer.layers.remove(self.label_layer_name)
-
-        # TODO Catch more than 49 objects
-        _cmap = {
-            None: (0, 0, 0, 0),
-            0: (0, 0, 0, 0),
-            1: self.colormap.map([1])[0],
-        }  # +1 for skipping bg color
-        _layer_res = Labels(
-            self._data_res, name=self.label_layer_name, affine=_layer.affine, colormap=_cmap
-        )
-        self._viewer.add_layer(_layer_res)
-
-    def _reset(self):
+    def on_next(self):
         """Reset the Interactions of current session"""
-        super()._reset()
+        super().on_next()
         if self.session is not None:
             self.session.reset_interactions()
 
-    def _reset_interactions(self):
-        if self.session is not None:
-
-            _index = determine_layer_index(
-                self.label_layer_name,
-                [layer.name for layer in self._viewer.layers],
-                splitter=" - object ",
-            )
-            _layer = self._viewer.layers[self.label_layer_name]
-            _layer.name = f"{_layer.name} - object {_index}"
-            _layer.data = _layer.data.copy()
-
-            self.session.reset_interactions()
-            self.clear_layers()
-            _cmap = {
-                None: (0, 0, 0, 0),
-                0: (0, 0, 0, 0),
-                1: self.colormap.map([_index + 2])[0],
-            }  # +1 for next layer, +1 for skipping bg color
-
-            _layer_res = Labels(
-                self._data_res,
-                name=self.label_layer_name,
-                affine=self.session_cfg["affine"],
-                colormap=_cmap,
-            )
-            self._viewer.add_layer(_layer_res)
-
-    def on_model_selection(self):
-        """Reset the Session if another model is selected"""
-        self.session = None
-
+    # Inference Behaviour
     def inference(self, data: Any, index: int):
         """
         Performs inference on the provided data.
@@ -156,7 +98,6 @@ class nnInteractiveWidget(LayerControls):
                 bbox = [[_min[0], _max[0]], [_min[1], _max[1]], [_min[2], _max[2]]]
                 self.session.add_bbox_interaction(bbox, self.prompt_button.index == 0)
             elif index == 2:
-                data = data[None]
                 self.session.add_scribble_interaction(data, self.prompt_button.index == 0)
 
             self._viewer.layers[self.label_layer_name].refresh()

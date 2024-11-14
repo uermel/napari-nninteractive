@@ -1,4 +1,6 @@
 from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls, action_manager
+from napari.utils.action_manager import action_manager
+from qtpy.QtWidgets import QGridLayout
 
 
 class CustomQtBBoxControls(QtShapesControls):
@@ -43,7 +45,9 @@ class CustomQtBBoxControls(QtShapesControls):
             action_manager.unbind_shortcut(button["shortcut"])
 
         # Reorder the remaining buttons to not have a sparse layout
-        self.button_grid.addWidget(self.delete_button, 0, 0)
-        self.button_grid.addWidget(self.select_button, 0, 1)
+        self.button_grid.addWidget(self.delete_button, 0, 1)
+        # self.button_grid.addWidget(self.select_button, 0, 1)
         self.button_grid.addWidget(self.rectangle_button, 0, 2)
-        self.button_grid.addWidget(self.panzoom_button, 0, 3)
+        # self.button_grid.addWidget(self.panzoom_button, 0, 3)
+
+        self.rectangle_button.setChecked(True)
