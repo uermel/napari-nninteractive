@@ -14,7 +14,7 @@ class _Switch(QWidget):
         shortcuts (Optional[List[str]], optional): List of keyboard shortcuts for each option. Defaults to None.
     """
 
-    def __init__(self, layout, options, function, default=None, shortcuts=None):
+    def __init__(self, layout, options, function, default=None, shortcuts=None, add_tooltip=True):
         super().__init__()
         self.function = function
         self.options = options
@@ -28,7 +28,7 @@ class _Switch(QWidget):
             layout.addWidget(_btn)
             self.buttons.append(_btn)
 
-        if shortcuts is not None:
+        if shortcuts is not None and add_tooltip:
             for i, shortcut in enumerate(shortcuts):
                 key = QShortcut(QKeySequence(shortcut), self)
                 key.activated.connect(lambda idx=i: self._on_button_pressed(idx))
@@ -69,6 +69,11 @@ class _Switch(QWidget):
             self.buttons[idx].setChecked(True)
             self.buttons[idx].setStyleSheet("QPushButton {background-color: rgb(0,100, 167);}")
 
+    def _next(self, *args, **kwargs):
+        """Just go to the next item"""
+        idx = (self.index + 1) % len(self.options)
+        self._on_button_pressed(idx)
+
 
 class HSwitch(_Switch):
     """
@@ -81,9 +86,9 @@ class HSwitch(_Switch):
         shortcuts (Optional[List[str]], optional): List of keyboard shortcuts for each option. Defaults to None.
     """
 
-    def __init__(self, options, function, default=None, shortcuts=None):
+    def __init__(self, options, function, default=None, shortcuts=None, add_tooltip=True):
         _layout = QHBoxLayout()
-        super().__init__(_layout, options, function, default, shortcuts)
+        super().__init__(_layout, options, function, default, shortcuts, add_tooltip)
 
 
 class VSwitch(_Switch):
@@ -97,6 +102,6 @@ class VSwitch(_Switch):
         shortcuts (Optional[List[str]], optional): List of keyboard shortcuts for each option. Defaults to None.
     """
 
-    def __init__(self, options, function, default=None, shortcuts=None):
+    def __init__(self, options, function, default=None, shortcuts=None, add_tooltip=True):
         _layout = QVBoxLayout()
-        super().__init__(_layout, options, function, default, shortcuts)
+        super().__init__(_layout, options, function, default, shortcuts, add_tooltip)

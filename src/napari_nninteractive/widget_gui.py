@@ -1,6 +1,6 @@
 import warnings
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 from napari.layers.image.image import Image
 from napari.viewer import Viewer
@@ -40,9 +40,11 @@ class BaseGUI(QWidget):
         _main_layout.addWidget(self._init_interaction_selection())  # Interaction Selection
         _main_layout.addWidget(self._init_run_button())  # Run Button
         self._unlock_session()
-        self._viewer.bind_key("Ctrl+Alt+Enter", self.on_run)
-        self._viewer.bind_key("Ctrl+Q", self._close)
+        self._viewer.bind_key("Ctrl+Alt+Enter", self.on_run, overwrite=True)
+        self._viewer.bind_key("Ctrl+Q", self._close, overwrite=True)
+        self._viewer.bind_key("+", self.prompt_button._next, overwrite=True)
 
+    # Base Behaviour
     def _close(self):
         """Closes the viewer and quits the application."""
         self._viewer.close()
@@ -50,11 +52,7 @@ class BaseGUI(QWidget):
 
     def _unlock_session(self):
         """Unlocks the session, enabling model and image selection, and initializing controls."""
-        # self.model_selection.setEnabled(True)
-        # self.bg_preprocessing_ckbx.setEnabled(True)
-        # self.image_selection.setEnabled(True)
         self.init_button.setEnabled(True)
-        # self.reset_interactions_button.setEnabled(False)
 
         self.reset_button.setEnabled(False)
         self.prompt_button.setEnabled(False)
@@ -66,11 +64,7 @@ class BaseGUI(QWidget):
 
     def _lock_session(self):
         """Locks the session, disabling model and image selection, and enabling control buttons."""
-        # self.model_selection.setEnabled(False)
-        # self.bg_preprocessing_ckbx.setEnabled(False)
-        # self.image_selection.setEnabled(False)
         self.init_button.setEnabled(False)
-        # self.reset_interactions_button.setEnabled(True)
 
         self.reset_button.setEnabled(True)
         self.prompt_button.setEnabled(True)
@@ -80,6 +74,17 @@ class BaseGUI(QWidget):
 
         self.locked = False
 
+    def _reset_session(self):
+        """Clear Layers, reset session configuration and unlock the session controls."""
+        self.session_cfg = None
+        self._clear_layers()
+        self._unlock_session()
+
+    def _clear_layers(self):
+        """Abstract function to clear all needed layers"""
+        pass
+
+    # Init Methods
     def _init_model_selection(self) -> QGroupBox:
         """Initializes the model selection as a combo box."""
         _group_box = QGroupBox("Model Selection:")
@@ -96,7 +101,7 @@ class BaseGUI(QWidget):
                 UserWarning,
                 stacklevel=2,
             )
-        self.model_selection = add_tooltipcombobox(_layout, _folders, self._reset)
+        self.model_selection = add_tooltipcombobox(_layout, _folders, self._reset_session)
         self.model_selection.setFixedWidth(250)
 
         self.bg_preprocessing_ckbx = add_checkbox(
@@ -115,7 +120,7 @@ class BaseGUI(QWidget):
         _layout = QVBoxLayout()
 
         self.image_selection = add_layerselection(
-            _layout, viewer=self._viewer, layer_type=Image, function=self._reset
+            _layout, viewer=self._viewer, layer_type=Image, function=self._reset_session
         )
         self.image_selection.setFixedWidth(250)
 
@@ -132,16 +137,10 @@ class BaseGUI(QWidget):
         )
         self.reset_button = add_button(
             _layout,
-            "Reset",
-            self._reset_interactions,
+            "Next Object",
+            self.on_next,
             tooltips="Keep Model and Image Pair, just reset the interactions",
         )
-        # self.reset_interactions_button = add_button(
-        #     _layout,
-        #     "Reset Interactions",
-        #     self.on_reset_interactions,
-        #     tooltips="Keep Model and Image Pair, just reset the interactions",
-        # )
 
         _group_box.setLayout(_layout)
         return _group_box
@@ -154,8 +153,9 @@ class BaseGUI(QWidget):
         options = ["positive", "negative"]
         shortcuts = ["Ctrl+Alt++", "Ctrl+Alt+-"]
         self.prompt_button = HSwitch(
-            options, self.on_prompt_selected, default=0, shortcuts=shortcuts
+            options, self.on_prompt_selected, default=0, shortcuts=shortcuts, add_tooltip=False
         )
+        self.prompt_button.setToolTip("Press + to switch")
         _layout.addWidget(self.prompt_button)
 
         _group_box.setLayout(_layout)
@@ -189,7 +189,8 @@ class BaseGUI(QWidget):
         _group_box.setLayout(_layout)
         return _group_box
 
-    def on_init(self, *args, **kwargs):
+    # Event Handlers
+    def on_init(self, *args, **kwargs) -> None:
         """Initializes the session configuration based on the selected model and image."""
         image_name = self.image_selection.currentText()
         model_name = self.model_selection.currentText()
@@ -201,37 +202,24 @@ class BaseGUI(QWidget):
                 "ndim": image_layer.ndim,
                 "shape": image_layer.data.shape,
                 "affine": image_layer.affine,
+                "spacing": image_layer.scale,
             }
             self._lock_session()
 
-    def _reset(self):
-        """Resets the session configuration and unlocks the session controls."""
-        self.session_cfg = None
-        self.clear_layers()
-        self._unlock_session()
+    def on_next(self) -> None:
+        """Resets the interactions."""
+        print("_reset_interactions")
 
-    def on_prompt_selected(self, *args, **kwargs):
-        """Callback when the prompt type is selected"""
+    def on_prompt_selected(self, *args, **kwargs) -> None:
+        """Placeholder method for when a prompt type is selected"""
         print("on_prompt_selected", self.prompt_button.index, self.prompt_button.value)
 
-    def on_interaction_selected(self, *args, **kwargs):
-        """Callback when the interaction type is selected."""
+    def on_interaction_selected(self, *args, **kwargs) -> None:
+        """Placeholder method for when an interaction type is selected."""
         print(
             "on_interaction_selected", self.interaction_button.index, self.interaction_button.value
         )
 
-    def on_run(self, *args, **kwargs):
-        """Executes the run operation based on the current session configuration."""
+    def on_run(self, *args, **kwargs) -> None:
+        """Placeholder method for run operation"""
         print("on_run")
-
-    def _auto_run(self, event: Any):
-        print("auto_run")
-
-    def clear_layers(self):
-        """Placeholder method for clearing layers in the viewer."""
-
-    def on_model_selection(self):
-        print("on_model_selection")
-
-    def _reset_interactions(self):
-        print("_reset_interactions")
