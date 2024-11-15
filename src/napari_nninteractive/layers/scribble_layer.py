@@ -3,8 +3,6 @@ from napari.layers.base._base_constants import ActionType
 
 from napari_nninteractive.layers.abstract_layer import BaseLayerClass
 
-from napari_nninteractive.layers.abstract_layer import BaseLayerClass
-
 
 class ScibbleLayer(BaseLayerClass, Labels):
     """

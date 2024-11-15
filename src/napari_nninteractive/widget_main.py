@@ -3,7 +3,6 @@ from typing import Any, Optional
 
 import numpy as np
 import torch
-from napari.utils.colormaps import label_colormap
 from napari.viewer import Viewer
 from nnunetv2.inference.nnInteractive.interactive_inference import nnInteractiveInferenceSession
 from qtpy.QtWidgets import QWidget
@@ -29,7 +28,6 @@ class nnInteractiveWidget(LayerControls):
         """
         super().__init__(viewer, parent)
         self.session = None
-        self.colormap = label_colormap(49, seed=0.5, background_value=0)
 
     # Base Behaviour
     def _reset_session(self):
@@ -64,18 +62,19 @@ class nnInteractiveWidget(LayerControls):
                 5,
                 "checkpoint_best.pth",
             )
-        self._scribble_brush_size = self.session.recommended_scribble_thickness
         _data = self._viewer.layers[self.session_cfg["name"]].data
         _data = _data[np.newaxis, ...]
 
         self.session.set_image(_data, {"spacing": self.session_cfg["spacing"]})
         self.session.set_target_buffer(self._data_result)
+        self._scribble_brush_size = self.session.recommended_scribble_thickness[0]
 
     def on_next(self):
         """Reset the Interactions of current session"""
         super().on_next()
         if self.session is not None:
             self.session.reset_interactions()
+        self._viewer.layers[self.label_layer_name].refresh()
 
     # Inference Behaviour
     def inference(self, data: Any, index: int):

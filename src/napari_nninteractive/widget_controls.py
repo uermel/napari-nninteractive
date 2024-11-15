@@ -1,3 +1,5 @@
+import os
+from pathlib import Path
 from typing import Any, Optional
 
 import numpy as np
@@ -6,7 +8,7 @@ from napari.layers import Labels
 from napari.layers.base._base_constants import ActionType
 from napari.utils.action_manager import action_manager
 from napari.viewer import Viewer
-from qtpy.QtWidgets import QWidget
+from qtpy.QtWidgets import QFileDialog, QWidget
 
 from napari_nninteractive.controls.bbox_controls import CustomQtBBoxControls
 from napari_nninteractive.controls.point_controls import CustomQtPointsControls
@@ -263,3 +265,34 @@ class LayerControls(BaseGUI):
         print(
             f"Inference for interaction {index} and prompt {self.prompt_button.index == 0} and valid data {data is not None} "
         )
+
+    def _export(self) -> None:
+
+        _dialog = QFileDialog(self)
+        _dialog.setDirectory(os.getcwd())
+        _output_dir = _dialog.getExistingDirectory(
+            self, "Select Output Directory", options=QFileDialog.DontUseNativeDialog
+        )
+
+        _img_layer = self._viewer.layers[self.session_cfg["name"]]
+
+        _img_file = Path(_img_layer.source.path).name
+        _dtype = ".nii.gz" if str(_img_file).endswith(".nii.gz") else Path(_img_file).suffix
+        _output_file = _img_file.replace(_dtype, "")
+        # _output_dir = Path(_output_dir).joinpath(f"{_output_file}_nnInteractive")
+        _output_dir = Path(_output_dir).joinpath(f"{_output_file}_{self.session_cfg['model']}")
+        Path(_output_dir).mkdir(exist_ok=True)
+
+        for _layer in self._viewer.layers:
+            if self.label_layer_name in _layer.name:
+                if self.label_layer_name == _layer.name:
+                    _index = determine_layer_index(
+                        self.label_layer_name,
+                        [layer.name for layer in self._viewer.layers],
+                        splitter=" - object ",
+                    )
+                else:
+                    _index = int(_layer.name.split(" - object ")[-1])
+
+                _file_name = f"{_output_file}_{str(_index).zfill(4)}{_dtype}"
+                _file = Path(_output_dir).joinpath(_file_name)

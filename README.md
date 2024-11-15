@@ -22,6 +22,7 @@ conda activate nnInteractive
 ##### 2. Install nnUNet (+Set the Paths) (branch project/nnInteractive)
 
 ```
+pip install git+https://github.com/MIC-DKFZ/batchgeneratorsv2.git
 git clone git@git.dkfz.de:mic/internal/nnu-net.git
 cd nnu-net
 git checkout project/nnInteractive

@@ -39,10 +39,14 @@ class BaseGUI(QWidget):
         _main_layout.addWidget(self._init_prompt_selection())  # Prompt Selection
         _main_layout.addWidget(self._init_interaction_selection())  # Interaction Selection
         _main_layout.addWidget(self._init_run_button())  # Run Button
+        _main_layout.addWidget(self._init_export_button())  # Run Button
+        _main_layout.addWidget(self._init_acknowledgements())  # Acknowledgements
+
         self._unlock_session()
-        self._viewer.bind_key("Ctrl+Alt+Enter", self.on_run, overwrite=True)
+        self._viewer.bind_key("Ctrl+Enter", self.on_run, overwrite=True)
         self._viewer.bind_key("Ctrl+Q", self._close, overwrite=True)
         self._viewer.bind_key("+", self.prompt_button._next, overwrite=True)
+        self.export_button.setEnabled(False)
 
     # Base Behaviour
     def _close(self):
@@ -60,8 +64,6 @@ class BaseGUI(QWidget):
         self.run_button.setEnabled(False)
         self.run_ckbx.setEnabled(False)
 
-        self.locked = True
-
     def _lock_session(self):
         """Locks the session, disabling model and image selection, and enabling control buttons."""
         self.init_button.setEnabled(False)
@@ -71,8 +73,7 @@ class BaseGUI(QWidget):
         self.interaction_button.setEnabled(True)
         self.run_button.setEnabled(True)
         self.run_ckbx.setEnabled(True)
-
-        self.locked = False
+        # self.export_button.setEnabled(True)
 
     def _reset_session(self):
         """Clear Layers, reset session configuration and unlock the session controls."""
@@ -178,13 +179,60 @@ class BaseGUI(QWidget):
         _group_box = QGroupBox("")
         _layout = QVBoxLayout()
 
-        self.run_button = add_button(_layout, "Run", self.on_run, tooltips="Ctrl+Alt+Enter")
+        self.run_button = add_button(_layout, "Run", self.on_run, tooltips="Ctrl+Enter")
         self.run_ckbx = add_checkbox(
             _layout,
             "Auto Run",
             True,
             tooltips="Run automatically after each interaction",
         )
+
+        _group_box.setLayout(_layout)
+        return _group_box
+
+    def _init_export_button(self) -> QGroupBox:
+        """Initializes the export button"""
+        _group_box = QGroupBox("")
+        _layout = QVBoxLayout()
+
+        self.export_button = add_button(_layout, "Export", self._export)
+        # self.browse_button = add_button(_layout, "Browse", self.select_path)
+
+        _group_box.setLayout(_layout)
+        return _group_box
+
+    def _init_acknowledgements(self) -> QGroupBox:
+        """Initializes acknowledgements by adding the logos"""
+        _group_box = QGroupBox("")
+
+        _layout = QVBoxLayout()
+
+        import importlib.resources
+
+        from qtpy.QtCore import Qt
+        from qtpy.QtGui import QPixmap
+        from qtpy.QtWidgets import QLabel, QSizePolicy, QSpacerItem
+
+        path_resources = importlib.resources.files("napari_nninteractive.resources")
+        path_DKFZ = path_resources.joinpath("DKFZ_Logo.png")
+        path_HI = path_resources.joinpath("HI_Logo.png")
+
+        pixmap_DKFZ = QPixmap(str(path_DKFZ))
+        pixmap_HI = QPixmap(str(path_HI))
+
+        pixmap_DKFZ = pixmap_DKFZ.scaledToWidth(250, Qt.SmoothTransformation)
+        pixmap_HI = pixmap_HI.scaledToWidth(250, Qt.SmoothTransformation)
+
+        logo_DKFI = QLabel()
+        logo_HI = QLabel()
+
+        logo_DKFI.setPixmap(pixmap_DKFZ)
+        logo_HI.setPixmap(pixmap_HI)
+        spacer = QSpacerItem(20, 40, QSizePolicy.Minimum)  # , QSizePolicy.Expanding)
+
+        _layout.addWidget(logo_HI)
+        _layout.addSpacerItem(spacer)
+        _layout.addWidget(logo_DKFI)
 
         _group_box.setLayout(_layout)
         return _group_box
@@ -223,3 +271,7 @@ class BaseGUI(QWidget):
     def on_run(self, *args, **kwargs) -> None:
         """Placeholder method for run operation"""
         print("on_run")
+
+    def _export(self) -> None:
+        """Placeholder method for exporting all generated label layers"""
+        pass
