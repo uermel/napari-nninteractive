@@ -1,7 +1,8 @@
 from napari.layers import Labels
-from napari_nninteractive.layers.abstract_layer import BaseLayerClass
 from napari.layers.base._base_constants import ActionType
 from napari.utils.events import Event
+
+from napari_nninteractive.layers.abstract_layer import BaseLayerClass
 
 
 class ScibbleLayer(BaseLayerClass, Labels):

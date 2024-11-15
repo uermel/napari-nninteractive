@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from napari.utils.events import Event
+
 from napari.layers.base._base_constants import ActionType
+from napari.utils.events import Event
 
 
 class BaseLayerClass(ABC):

@@ -5,13 +5,13 @@ import numpy as np
 import torch
 from napari.layers import Labels
 from napari.layers.base._base_constants import ActionType
+from napari.utils.colormaps import label_colormap
 from napari.viewer import Viewer
 from nnunetv2.inference.nnInteractive.interactive_inference import nnInteractiveInferenceSession
 from qtpy.QtWidgets import QWidget
 
-from napari_nninteractive.widget_controls import LayerControls
 from napari_nninteractive.utils.utils import determine_layer_index
-from napari.utils.colormaps import label_colormap
+from napari_nninteractive.widget_controls import LayerControls
 
 
 class nnInteractiveWidget_(LayerControls):
