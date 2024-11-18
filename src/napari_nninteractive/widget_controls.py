@@ -16,7 +16,7 @@ from napari_nninteractive.controls.scribble_controls import CustomQtScribbleCont
 from napari_nninteractive.layers.bbox_layer import BBoxLayer
 from napari_nninteractive.layers.point_layer import SinglePointLayer
 from napari_nninteractive.layers.scribble_layer import ScibbleLayer
-from napari_nninteractive.utils.utils import ColorMapper, determine_layer_index
+from napari_nninteractive.utils.utils import ColorMapper, determine_layer_index, is_orthogonal
 from napari_nninteractive.widget_gui import BaseGUI
 
 layer_to_controls[SinglePointLayer] = CustomQtPointsControls
@@ -115,6 +115,11 @@ class LayerControls(BaseGUI):
 
         # Get everything we need from the image layer
         image_layer = self._viewer.layers[image_name]
+
+        if not is_orthogonal(image_layer):
+            raise ValueError(
+                "Image is non-orthogonal. This is not supported by Napari and causes unreliable results. Select another image."
+            )
         self.session_cfg = {
             "name": image_name,
             "model": model_name,
