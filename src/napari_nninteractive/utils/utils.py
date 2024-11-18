@@ -1,6 +1,8 @@
 import numpy as np
+from kornia.geometry import nms2d
 from napari.utils.colormaps import label_colormap
 from napari.layers import Layer
+from napari.utils.transforms import Affine
 
 
 class ColorMapper:
@@ -44,24 +46,3 @@ def determine_layer_index(name, layer_names, splitter) -> str:
         return max([int(layer_name.split(splitter)[-1]) for layer_name in layer_names]) + 1
     else:
         return 0
-
-
-def is_orthogonal(layer: Layer) -> None:
-    """
-    Checks if the affine transformation of a layer is orthogonal.
-
-    An orthogonal transformation preserves angles and lengths, ensuring
-    the linear transformation part of the affine matrix satisfies:
-    `linear_part.T @ linear_part == Identity`.
-
-    Args:
-        layer (Any): A layer object with an `affine` attribute that includes
-            the `affine_matrix`.
-    """
-    affine_matrix = layer.affine.affine_matrix
-    # Extract the linear transformation part (top-left sub-matrix)
-    linear_part = affine_matrix[:-1, :-1]
-    # Check if the matrix is close to orthogonal
-    # Orthogonal: linear_part.T @ linear_part == Identity
-    orthogonality = np.allclose(linear_part.T @ linear_part, np.eye(linear_part.shape[0]))
-    return orthogonality

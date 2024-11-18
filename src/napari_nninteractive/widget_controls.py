@@ -100,6 +100,54 @@ class LayerControls(BaseGUI):
         scribble_layer.events.finished.connect(self.on_auto_run)
         self._viewer.add_layer(scribble_layer)
 
+    def add_label_layer(self) -> None:
+        """
+        Check if a layer with the layer_name already exists. If yes rename this by adding an index
+        and afterward create the layer
+        :return:
+        :rtype:
+        """
+        if self.label_layer_name in self._viewer.layers:
+            _index = determine_layer_index(
+                self.label_layer_name,
+                [layer.name for layer in self._viewer.layers],
+                splitter=" - object ",
+            )
+            _layer = self._viewer.layers[self.label_layer_name]
+            _layer.name = f"{_layer.name} - object {_index}"
+            _layer.data = _layer.data.copy()
+            _index += 1
+        else:
+            _index = 0
+
+        _layer_res = Labels(
+            self._data_result,
+            name=self.label_layer_name,
+            affine=self.session_cfg["affine"],
+            colormap=self.colormap[_index],
+        )
+        _layer_res._source = self.session_cfg["source"]
+
+        self._viewer.add_layer(_layer_res)
+
+        ################
+        # Rename layer and unbind data
+        # _layer = self._viewer.layers[self.label_layer_name]
+        # _layer.name = f"{_layer.name} - object {_index}"
+        # _layer.data = _layer.data.copy()
+        #
+        # # Clear all interaction layers
+        # self._clear_layers()
+        #
+        # # Add a new label to the viewer
+        # _layer_res = Labels(
+        #     self._data_result,
+        #     name=self.label_layer_name,
+        #     affine=self.session_cfg["affine"],
+        #     colormap=self.colormap[_index + 1],
+        # )
+        # self._viewer.add_layer(_layer_res)
+
     # Event Handlers
     def on_init(self, *args, **kwargs) -> None:
         """
@@ -115,8 +163,15 @@ class LayerControls(BaseGUI):
 
         # Get everything we need from the image layer
         image_layer = self._viewer.layers[image_name]
+        # image_layer._slice
+        # from napari.layers.base.base import _SliceInput
+        #
+        # s = _SliceInput(image_layer.ndim, image_layer.affine, (0,))
+        # print(s.is_orthogonal(image_layer.affine.affine_matrix[:-1, :-1]))
+        # si = _SliceInput(image_layer.affine)
 
-        if not is_orthogonal(image_layer):
+        # if not is_orthogonal(image_layer):
+        if not image_layer._slice_input.is_orthogonal(image_layer.affine):
             raise ValueError(
                 "Image is non-orthogonal. This is not supported by Napari and causes unreliable results. Select another image."
             )
@@ -127,22 +182,14 @@ class LayerControls(BaseGUI):
             "shape": image_layer.data.shape,
             "affine": image_layer.affine,
             "spacing": image_layer.scale,
+            "source": image_layer.source,
         }
 
         # Create the target label array and layer
         self._data_result = np.zeros(self.session_cfg["shape"], dtype=np.uint8)
 
-        _layer_res = Labels(
-            self._data_result,
-            name=self.label_layer_name,
-            affine=self.session_cfg["affine"],
-            colormap=self.colormap[0],
-        )
-
-        # Add Layer to Viewer
-        if self.label_layer_name in self._viewer.layers:
-            self._viewer.layers.remove(self.label_layer_name)
-        self._viewer.add_layer(_layer_res)
+        # Add Layer
+        self.add_label_layer()
 
         # Lock the Session
         self._lock_session()
@@ -155,28 +202,11 @@ class LayerControls(BaseGUI):
         this index, unbinds the original data by creating a deep copy, and clears all interaction
         layers. A new label layer with an updated colormap is then added to the viewer.
         """
-        # Get index of the last object
-        _index = determine_layer_index(
-            self.label_layer_name,
-            [layer.name for layer in self._viewer.layers],
-            splitter=" - object ",
-        )
-        # Rename layer and unbind data
-        _layer = self._viewer.layers[self.label_layer_name]
-        _layer.name = f"{_layer.name} - object {_index}"
-        _layer.data = _layer.data.copy()
 
+        # Rename the current layer and add a new one
+        self.add_label_layer()
         # Clear all interaction layers
         self._clear_layers()
-
-        # Add a new label to the viewer
-        _layer_res = Labels(
-            self._data_result,
-            name=self.label_layer_name,
-            affine=self.session_cfg["affine"],
-            colormap=self.colormap[_index + 1],
-        )
-        self._viewer.add_layer(_layer_res)
 
     def on_prompt_selected(self) -> None:
         """
@@ -301,3 +331,5 @@ class LayerControls(BaseGUI):
 
                 _file_name = f"{_output_file}_{str(_index).zfill(4)}{_dtype}"
                 _file = Path(_output_dir).joinpath(_file_name)
+
+                # _layer.save(_file)
