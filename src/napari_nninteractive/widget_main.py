@@ -28,6 +28,7 @@ class nnInteractiveWidget(LayerControls):
         """
         super().__init__(viewer, parent)
         self.session = None
+        self._viewer.dims.events.order.connect(self.on_axis_change)
 
     # Base Behaviour
     def _reset_session(self):
@@ -67,7 +68,9 @@ class nnInteractiveWidget(LayerControls):
 
         self.session.set_image(_data, {"spacing": self.session_cfg["spacing"]})
         self.session.set_target_buffer(self._data_result)
-        self._scribble_brush_size = self.session.recommended_scribble_thickness[0]
+        self._scribble_brush_size = self.session.recommended_scribble_thickness[
+            self._viewer.dims.not_displayed[0]
+        ]
 
     def on_next(self):
         """Reset the Interactions of current session"""
@@ -75,6 +78,15 @@ class nnInteractiveWidget(LayerControls):
         if self.session is not None:
             self.session.reset_interactions()
         self._viewer.layers[self.label_layer_name].refresh()
+
+    def on_axis_change(self, event: Any):
+        """Change the brush size of the scribble layer when the axis changes"""
+        if self.session is not None:
+            self._scribble_brush_size = self.session.recommended_scribble_thickness[
+                self._viewer.dims.not_displayed[0]
+            ]
+            if self.scribble_layer_name in self._viewer.layers:
+                self._viewer.layers[self.scribble_layer_name].brush_size = self._scribble_brush_size
 
     # Inference Behaviour
     def inference(self, data: Any, index: int):

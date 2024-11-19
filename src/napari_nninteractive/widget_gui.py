@@ -43,10 +43,11 @@ class BaseGUI(QWidget):
         _main_layout.addWidget(self._init_acknowledgements())  # Acknowledgements
 
         self._unlock_session()
-        self._viewer.bind_key("Ctrl+Enter", self.on_run, overwrite=True)
+        # self._viewer.bind_key("Ctrl+Enter", self.on_run, overwrite=True)
+        self._viewer.bind_key("R", self.on_run, overwrite=True)
         self._viewer.bind_key("Ctrl+Q", self._close, overwrite=True)
-        self._viewer.bind_key("+", self.prompt_button._next, overwrite=True)
-        self.export_button.setEnabled(False)
+        # self._viewer.bind_key("+", self.prompt_button._next, overwrite=True)
+        self._viewer.bind_key("T", self.prompt_button._next, overwrite=True)
 
     # Base Behaviour
     def _close(self):
@@ -63,6 +64,7 @@ class BaseGUI(QWidget):
         self.interaction_button.setEnabled(False)
         self.run_button.setEnabled(False)
         self.run_ckbx.setEnabled(False)
+        self.export_button.setEnabled(False)
 
     def _lock_session(self):
         """Locks the session, disabling model and image selection, and enabling control buttons."""
@@ -73,7 +75,7 @@ class BaseGUI(QWidget):
         self.interaction_button.setEnabled(True)
         self.run_button.setEnabled(True)
         self.run_ckbx.setEnabled(True)
-        # self.export_button.setEnabled(True)
+        self.export_button.setEnabled(True)
 
     def _reset_session(self):
         """Clear Layers, reset session configuration and unlock the session controls."""
@@ -156,7 +158,7 @@ class BaseGUI(QWidget):
         self.prompt_button = HSwitch(
             options, self.on_prompt_selected, default=0, shortcuts=shortcuts, add_tooltip=False
         )
-        self.prompt_button.setToolTip("Press + to switch")
+        self.prompt_button.setToolTip("Press T to switch")
         _layout.addWidget(self.prompt_button)
 
         _group_box.setLayout(_layout)
@@ -179,7 +181,7 @@ class BaseGUI(QWidget):
         _group_box = QGroupBox("")
         _layout = QVBoxLayout()
 
-        self.run_button = add_button(_layout, "Run", self.on_run, tooltips="Ctrl+Enter")
+        self.run_button = add_button(_layout, "Run", self.on_run, tooltips="Press R")
         self.run_ckbx = add_checkbox(
             _layout,
             "Auto Run",

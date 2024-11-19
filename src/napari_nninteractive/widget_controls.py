@@ -6,6 +6,7 @@ import numpy as np
 from napari._qt.layer_controls.qt_layer_controls_container import layer_to_controls
 from napari.layers import Labels
 from napari.layers.base._base_constants import ActionType
+from napari.plugins import plugin_manager
 from napari.utils.action_manager import action_manager
 from napari.viewer import Viewer
 from qtpy.QtWidgets import QFileDialog, QWidget
@@ -16,12 +17,14 @@ from napari_nninteractive.controls.scribble_controls import CustomQtScribbleCont
 from napari_nninteractive.layers.bbox_layer import BBoxLayer
 from napari_nninteractive.layers.point_layer import SinglePointLayer
 from napari_nninteractive.layers.scribble_layer import ScibbleLayer
-from napari_nninteractive.utils.utils import ColorMapper, determine_layer_index, is_orthogonal
+from napari_nninteractive.utils.utils import ColorMapper, determine_layer_index
 from napari_nninteractive.widget_gui import BaseGUI
 
 layer_to_controls[SinglePointLayer] = CustomQtPointsControls
 layer_to_controls[BBoxLayer] = CustomQtBBoxControls
 layer_to_controls[ScibbleLayer] = CustomQtScribbleControls
+
+import napari_nifti
 
 
 class LayerControls(BaseGUI):
@@ -54,8 +57,7 @@ class LayerControls(BaseGUI):
     # Layer Handling
     def _clear_layers(self) -> None:
         """Removes all layers in the viewer that are managed by this class."""
-        layer_names = list(self.layer_dict.values())  # + [self.label_layer_name]
-        # for layer_name in self.layer_dict.values():
+        layer_names = list(self.layer_dict.values())
         for layer_name in layer_names:
             if layer_name in self._viewer.layers:
                 self._viewer.layers.remove(layer_name)
@@ -66,6 +68,7 @@ class LayerControls(BaseGUI):
             name=self.point_layer_name,
             ndim=self.session_cfg["ndim"],
             affine=self.session_cfg["affine"],
+            metadata=self.session_cfg["metadata"],
             opacity=0.7,
             size=5,
             prompt_index=self.prompt_button.index,
@@ -79,6 +82,7 @@ class LayerControls(BaseGUI):
             name=self.bbox_layer_name,
             ndim=self.session_cfg["ndim"],
             affine=self.session_cfg["affine"],
+            metadata=self.session_cfg["metadata"],
             prompt_index=self.prompt_button.index,
             opacity=0.5,
         )
@@ -92,6 +96,7 @@ class LayerControls(BaseGUI):
             data=_data,
             name=self.scribble_layer_name,
             affine=self.session_cfg["affine"],
+            metadata=self.session_cfg["metadata"],
             prompt_index=self.prompt_button.index,
         )
 
@@ -125,28 +130,11 @@ class LayerControls(BaseGUI):
             name=self.label_layer_name,
             affine=self.session_cfg["affine"],
             colormap=self.colormap[_index],
+            metadata=self.session_cfg["metadata"],
         )
         _layer_res._source = self.session_cfg["source"]
 
         self._viewer.add_layer(_layer_res)
-
-        ################
-        # Rename layer and unbind data
-        # _layer = self._viewer.layers[self.label_layer_name]
-        # _layer.name = f"{_layer.name} - object {_index}"
-        # _layer.data = _layer.data.copy()
-        #
-        # # Clear all interaction layers
-        # self._clear_layers()
-        #
-        # # Add a new label to the viewer
-        # _layer_res = Labels(
-        #     self._data_result,
-        #     name=self.label_layer_name,
-        #     affine=self.session_cfg["affine"],
-        #     colormap=self.colormap[_index + 1],
-        # )
-        # self._viewer.add_layer(_layer_res)
 
     # Event Handlers
     def on_init(self, *args, **kwargs) -> None:
@@ -163,14 +151,7 @@ class LayerControls(BaseGUI):
 
         # Get everything we need from the image layer
         image_layer = self._viewer.layers[image_name]
-        # image_layer._slice
-        # from napari.layers.base.base import _SliceInput
-        #
-        # s = _SliceInput(image_layer.ndim, image_layer.affine, (0,))
-        # print(s.is_orthogonal(image_layer.affine.affine_matrix[:-1, :-1]))
-        # si = _SliceInput(image_layer.affine)
 
-        # if not is_orthogonal(image_layer):
         if not image_layer._slice_input.is_orthogonal(image_layer.affine):
             raise ValueError(
                 "Image is non-orthogonal. This is not supported by Napari and causes unreliable results. Select another image."
@@ -181,8 +162,13 @@ class LayerControls(BaseGUI):
             "ndim": image_layer.ndim,
             "shape": image_layer.data.shape,
             "affine": image_layer.affine,
-            "spacing": image_layer.scale,
+            "spacing": (
+                image_layer.metadata["spacing"]
+                if "spacing" in image_layer.metadata
+                else image_layer.scale
+            ),
             "source": image_layer.source,
+            "metadata": image_layer.metadata,
         }
 
         # Create the target label array and layer
@@ -202,6 +188,10 @@ class LayerControls(BaseGUI):
         this index, unbinds the original data by creating a deep copy, and clears all interaction
         layers. A new label layer with an updated colormap is then added to the viewer.
         """
+        current_axes = self._viewer.dims.order  # Order of axes as shown in the viewer
+        displayed_axes = [
+            i for i in range(len(current_axes)) if i not in self._viewer.dims.not_displayed
+        ]
 
         # Rename the current layer and add a new one
         self.add_label_layer()
@@ -303,33 +293,47 @@ class LayerControls(BaseGUI):
 
     def _export(self) -> None:
 
-        _dialog = QFileDialog(self)
-        _dialog.setDirectory(os.getcwd())
-        _output_dir = _dialog.getExistingDirectory(
-            self, "Select Output Directory", options=QFileDialog.DontUseNativeDialog
-        )
-
         _img_layer = self._viewer.layers[self.session_cfg["name"]]
-
         _img_file = Path(_img_layer.source.path).name
         _dtype = ".nii.gz" if str(_img_file).endswith(".nii.gz") else Path(_img_file).suffix
         _output_file = _img_file.replace(_dtype, "")
-        # _output_dir = Path(_output_dir).joinpath(f"{_output_file}_nnInteractive")
-        _output_dir = Path(_output_dir).joinpath(f"{_output_file}_{self.session_cfg['model']}")
-        Path(_output_dir).mkdir(exist_ok=True)
 
-        for _layer in self._viewer.layers:
-            if self.label_layer_name in _layer.name:
-                if self.label_layer_name == _layer.name:
-                    _index = determine_layer_index(
-                        self.label_layer_name,
-                        [layer.name for layer in self._viewer.layers],
-                        splitter=" - object ",
-                    )
-                else:
-                    _index = int(_layer.name.split(" - object ")[-1])
+        _dialog = QFileDialog(self)
+        _dialog.setDirectory(os.getcwd())
 
-                _file_name = f"{_output_file}_{str(_index).zfill(4)}{_dtype}"
-                _file = Path(_output_dir).joinpath(_file_name)
+        _output_dir = _dialog.getExistingDirectory(
+            self,
+            "Select an Output Directory",
+            options=QFileDialog.DontUseNativeDialog | QFileDialog.ShowDirsOnly,
+        )
+        # _output_dir = _dialog.getSaveFileName(
+        #     self,
+        #     "Select a Output Directory",
+        #     f"{_output_file}_{self.session_cfg['model']}",
+        #     options=QFileDialog.DontUseNativeDialog,
+        # )[0]
 
-                # _layer.save(_file)
+        if _output_dir == "":
+            return
+
+        elif Path(_output_dir).is_dir():
+            _output_dir = Path(_output_dir).joinpath(f"{_output_file}_{self.session_cfg['model']}")
+            Path(_output_dir).mkdir(exist_ok=True)
+
+            for _layer in self._viewer.layers:
+                if self.label_layer_name in _layer.name:
+                    if self.label_layer_name == _layer.name:
+                        _index = determine_layer_index(
+                            self.label_layer_name,
+                            [layer.name for layer in self._viewer.layers],
+                            splitter=" - object ",
+                        )
+                    else:
+                        _index = int(_layer.name.split(" - object ")[-1])
+
+                    _file_name = f"{_output_file}_{str(_index).zfill(4)}{_dtype}"
+                    _file = str(Path(_output_dir).joinpath(_file_name))
+
+                    _layer.save(_file)
+        else:
+            raise ValueError(f"Output path has to be a directory, not a file")
