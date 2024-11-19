@@ -1,5 +1,4 @@
 import numpy as np
-from kornia.geometry import nms2d
 from napari.layers import Layer
 from napari.utils.colormaps import label_colormap
 from napari.utils.transforms import Affine
@@ -10,6 +9,7 @@ class ColorMapper:
     A color mapping class that generates colors for labeled items using a colormap.
     Args:
         num_colors (int, optional): The total number of colors to generate. Defaults to 49.
+        seed (float, optional): A seed for random color generation. Defaults to 0.5.
         seed (float, optional): A seed for random color generation. Defaults to 0.5.
         background_value (int, optional): The background value for the colormap. Defaults to 0.
         skip_bg (bool, optional): If True, skips the background color in mappings. Defaults to True.
