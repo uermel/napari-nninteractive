@@ -82,14 +82,12 @@ class BaseLayerClass(ABC):
         Args:
             _color (List[float]): The new RGBA color to apply.
         """
-        pass
 
     @abstractmethod
     def remove_last(self) -> None:
         """
         Abstract method to remove the last item from the layer.
         """
-        pass
 
     @abstractmethod
     def _add(self, data: Any, *arg, **kwargs) -> None:
@@ -99,4 +97,3 @@ class BaseLayerClass(ABC):
         Args:
             data (Any): The data to add.
         """
-        pass

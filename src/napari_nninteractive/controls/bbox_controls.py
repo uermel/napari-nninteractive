@@ -1,6 +1,5 @@
-from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls, action_manager
+from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
 from napari.utils.action_manager import action_manager
-from qtpy.QtWidgets import QGridLayout
 
 
 class CustomQtBBoxControls(QtShapesControls):

@@ -84,12 +84,11 @@ class BBoxLayer(BaseLayerClass, Shapes):
         Shapes.add(
             self,
             data,
+            *args,
             edge_color=self.colors[self.prompt_index],
             face_color=self.colors[self.prompt_index],
-            *args,
             **kwargs,
         )
-        # self.refresh(force=True)
 
     def remove_selected(self) -> None:
         """Removes selected points if any."""

@@ -1,7 +1,4 @@
-import numpy as np
-from napari.layers import Layer
 from napari.utils.colormaps import label_colormap
-from napari.utils.transforms import Affine
 
 
 class ColorMapper:

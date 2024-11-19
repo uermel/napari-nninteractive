@@ -4,7 +4,9 @@ from typing import Any, Optional
 import numpy as np
 import torch
 from napari.viewer import Viewer
-from nnunetv2.inference.nnInteractive.interactive_inference import nnInteractiveInferenceSession
+from nnunetv2.inference.nnInteractive.interactive_inference import (
+    nnInteractiveInferenceSession,
+)
 from qtpy.QtWidgets import QWidget
 
 from napari_nninteractive.widget_controls import LayerControls
@@ -12,8 +14,6 @@ from napari_nninteractive.widget_controls import LayerControls
 
 class nnInteractiveWidget_(LayerControls):
     """Just a Debug Dummy without all the machine learning stuff"""
-
-    pass
 
 
 class nnInteractiveWidget(LayerControls):

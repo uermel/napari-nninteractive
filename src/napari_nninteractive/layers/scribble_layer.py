@@ -40,7 +40,6 @@ class ScibbleLayer(BaseLayerClass, Labels):
 
     def _add(self, data, *arg, **kwargs) -> None:
         """We dont need this function here"""
-        pass
 
     def run(self) -> None:
         """

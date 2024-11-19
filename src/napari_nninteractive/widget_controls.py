@@ -6,8 +6,6 @@ import numpy as np
 from napari._qt.layer_controls.qt_layer_controls_container import layer_to_controls
 from napari.layers import Labels
 from napari.layers.base._base_constants import ActionType
-from napari.plugins import plugin_manager
-from napari.utils.action_manager import action_manager
 from napari.viewer import Viewer
 from qtpy.QtWidgets import QFileDialog, QWidget
 
@@ -23,8 +21,6 @@ from napari_nninteractive.widget_gui import BaseGUI
 layer_to_controls[SinglePointLayer] = CustomQtPointsControls
 layer_to_controls[BBoxLayer] = CustomQtBBoxControls
 layer_to_controls[ScibbleLayer] = CustomQtScribbleControls
-
-import napari_nifti
 
 
 class LayerControls(BaseGUI):
@@ -162,11 +158,7 @@ class LayerControls(BaseGUI):
             "ndim": image_layer.ndim,
             "shape": image_layer.data.shape,
             "affine": image_layer.affine,
-            "spacing": (
-                image_layer.metadata["spacing"]
-                if "spacing" in image_layer.metadata
-                else image_layer.scale
-            ),
+            "spacing": image_layer.metadata.get("spacing", image_layer.scale),
             "source": image_layer.source,
             "metadata": image_layer.metadata,
         }
@@ -188,11 +180,6 @@ class LayerControls(BaseGUI):
         this index, unbinds the original data by creating a deep copy, and clears all interaction
         layers. A new label layer with an updated colormap is then added to the viewer.
         """
-        current_axes = self._viewer.dims.order  # Order of axes as shown in the viewer
-        displayed_axes = [
-            i for i in range(len(current_axes)) if i not in self._viewer.dims.not_displayed
-        ]
-
         # Rename the current layer and add a new one
         self.add_label_layer()
         # Clear all interaction layers
@@ -241,11 +228,14 @@ class LayerControls(BaseGUI):
         """
         _index = self.interaction_button.index
         _layer_name = self.layer_dict.get(_index)
-        if _layer_name is not None and _layer_name in self._viewer.layers:
-            if not self._viewer.layers[_layer_name].is_free():
-                _data = self._viewer.layers[_layer_name].get_last()
-                self._viewer.layers[_layer_name].run()
-                self.inference(_data, _index)
+        if (
+            _layer_name is not None
+            and _layer_name in self._viewer.layers
+            and not self._viewer.layers[_layer_name].is_free()
+        ):
+            _data = self._viewer.layers[_layer_name].get_last()
+            self._viewer.layers[_layer_name].run()
+            self.inference(_data, _index)
 
     def on_auto_run(self, event: Any) -> None:
         """
@@ -336,4 +326,4 @@ class LayerControls(BaseGUI):
 
                     _layer.save(_file)
         else:
-            raise ValueError(f"Output path has to be a directory, not a file")
+            raise ValueError("Output path has to be a directory, not a file")

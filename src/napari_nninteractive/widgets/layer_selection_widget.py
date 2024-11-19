@@ -1,4 +1,3 @@
-from napari.layers.base._base_constants import ActionType
 from napari.viewer import Viewer
 from qtpy.QtWidgets import QComboBox
 

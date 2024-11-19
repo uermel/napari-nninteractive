@@ -85,7 +85,6 @@ class BaseGUI(QWidget):
 
     def _clear_layers(self):
         """Abstract function to clear all needed layers"""
-        pass
 
     # Init Methods
     def _init_model_selection(self) -> QGroupBox:
@@ -276,4 +275,3 @@ class BaseGUI(QWidget):
 
     def _export(self) -> None:
         """Placeholder method for exporting all generated label layers"""
-        pass
