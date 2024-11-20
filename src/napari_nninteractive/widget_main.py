@@ -4,9 +4,7 @@ from typing import Any, Optional
 import numpy as np
 import torch
 from napari.viewer import Viewer
-from nnunetv2.inference.nnInteractive.interactive_inference import (
-    nnInteractiveInferenceSession,
-)
+from nnunetv2.inference.nnInteractive.interactive_inference import nnInteractiveInferenceSession
 from qtpy.QtWidgets import QWidget
 
 from napari_nninteractive.widget_controls import LayerControls
@@ -66,11 +64,22 @@ class nnInteractiveWidget(LayerControls):
         _data = self._viewer.layers[self.session_cfg["name"]].data
         _data = _data[np.newaxis, ...]
 
+        if self.session_cfg["ndim_source"] == 2:
+            _data = _data[np.newaxis, ...]
+
         self.session.set_image(_data, {"spacing": self.session_cfg["spacing"]})
+
         self.session.set_target_buffer(self._data_result)
         self._scribble_brush_size = self.session.recommended_scribble_thickness[
             self._viewer.dims.not_displayed[0]
         ]
+
+    def on_reset_interations(self):
+        """Reset only the current interaction"""
+        super().on_reset_interations()
+        if self.session is not None:
+            self.session.reset_interactions()
+        self._viewer.layers[self.label_layer_name].refresh()
 
     def on_next(self):
         """Reset the Interactions of current session"""

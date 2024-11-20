@@ -3,18 +3,11 @@ from typing import Callable, List, Optional
 from napari.layers import Layer
 from napari.viewer import Viewer
 from qtpy.QtGui import QKeySequence
-from qtpy.QtWidgets import (
-    QCheckBox,
-    QComboBox,
-    QLabel,
-    QLayout,
-    QPushButton,
-    QShortcut,
-    QWidget,
-)
+from qtpy.QtWidgets import QCheckBox, QComboBox, QLabel, QLayout, QPushButton, QShortcut, QWidget
 
-from napari_nninteractive.widgets.layer_selection_widget import LayerSelectionWidget
-from napari_nninteractive.widgets.tooltip_combobox import ToolTipQComboBox
+from napari_nninteractive.napari_utils.widgets.layer_selection_widget import LayerSelectionWidget
+from napari_nninteractive.napari_utils.widgets.switch_widget import QHSwitch, QVSwitch
+from napari_nninteractive.napari_utils.widgets.tooltip_combobox import ToolTipQComboBox
 
 
 def _connect_widget(
@@ -43,7 +36,7 @@ def _connect_widget(
     if function and widget_event:
         widget_event.connect(function)
         if shortcut:
-            key = QShortcut(QKeySequence(shortcut), layout)
+            key = QShortcut(QKeySequence(shortcut), widget)
             key.activated.connect(function)
 
     if tooltips:
@@ -53,7 +46,60 @@ def _connect_widget(
     return widget
 
 
-def add_layerselection(
+def _setup_switch(
+    _widget: QWidget,
+    layout: QLayout,
+    options: List[str],
+    function: Optional[Callable[[str], None]] = None,
+    default: int = None,
+    shortcut: Optional[str] = None,
+    tooltips: Optional[str] = None,
+):
+    _widget.addItems(options)
+
+    if default is not None:
+        _widget._check(default)
+
+    if shortcut:
+        key = QShortcut(QKeySequence(shortcut), _widget)
+        key.activated.connect(_widget.next)
+
+    return _connect_widget(
+        layout,
+        _widget,
+        widget_event=_widget.clicked,
+        function=function,
+        shortcut=None,
+        tooltips=tooltips,
+    )
+
+
+def setup_vswitch(
+    layout: QLayout,
+    options: List[str],
+    function: Optional[Callable[[str], None]] = None,
+    default: int = None,
+    shortcut: Optional[str] = None,
+    tooltips: Optional[str] = None,
+):
+
+    _widget = QVSwitch()
+    return _setup_switch(_widget, layout, options, function, default, shortcut, tooltips)
+
+
+def setup_hswitch(
+    layout: QLayout,
+    options: List[str],
+    function: Optional[Callable[[str], None]] = None,
+    default: int = None,
+    shortcut: Optional[str] = None,
+    tooltips: Optional[str] = None,
+):
+    _widget = QHSwitch()
+    return _setup_switch(_widget, layout, options, function, default, shortcut, tooltips)
+
+
+def setup_layerselection(
     layout: QLayout,
     viewer: Optional[Viewer] = None,
     layer_type: Optional[Layer] = None,
@@ -89,7 +135,7 @@ def add_layerselection(
     )
 
 
-def add_tooltipcombobox(
+def setup_tooltipcombobox(
     layout: QLayout,
     options: List[str],
     function: Optional[Callable[[str], None]] = None,
@@ -122,7 +168,7 @@ def add_tooltipcombobox(
     )
 
 
-def add_combobox(
+def setup_combobox(
     layout: QLayout,
     options: List[str],
     function: Optional[Callable[[str], None]] = None,
@@ -156,7 +202,7 @@ def add_combobox(
     )
 
 
-def add_text(layout: QLayout, text: str, verbose: bool = True, tooltips: str = None) -> QLayout:
+def setup_text(layout: QLayout, text: str, verbose: bool = True, tooltips: str = None) -> QLayout:
     """
     Adds a QLabel with the specified text to a layout, optionally printing the text
     and setting a tooltip.
@@ -184,7 +230,7 @@ def add_text(layout: QLayout, text: str, verbose: bool = True, tooltips: str = N
     )
 
 
-def add_button(
+def setup_button(
     layout: QLayout,
     text: str,
     function: Callable[[], None],
@@ -216,7 +262,7 @@ def add_button(
     )
 
 
-def add_checkbox(
+def setup_checkbox(
     layout: QLayout,
     text: str,
     checked: bool,

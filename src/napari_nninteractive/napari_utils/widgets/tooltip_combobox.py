@@ -2,6 +2,10 @@ from qtpy.QtWidgets import QComboBox
 
 
 class ToolTipQComboBox(QComboBox):
+    """
+    Show the currently Selected Text as tooltip. Useful for long filenames etc.
+    """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.currentIndexChanged.connect(self.update_tooltip)

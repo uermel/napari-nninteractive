@@ -1,3 +1,4 @@
+import importlib.resources
 import warnings
 from pathlib import Path
 from typing import Optional
@@ -5,14 +6,26 @@ from typing import Optional
 from napari.layers.image.image import Image
 from napari.viewer import Viewer
 from nnunetv2.paths import nnUNet_results
-from qtpy.QtWidgets import QGroupBox, QHBoxLayout, QVBoxLayout, QWidget
+from qtpy.QtCore import Qt
+from qtpy.QtGui import QPixmap
+from qtpy.QtWidgets import (
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QSizePolicy,
+    QSpacerItem,
+    QVBoxLayout,
+    QWidget,
+)
 
-from napari_nninteractive.widgets.switch_widget import HSwitch, VSwitch
-from napari_nninteractive.widgets.widget_helpers import (
-    add_button,
-    add_checkbox,
-    add_layerselection,
-    add_tooltipcombobox,
+from napari_nninteractive.napari_utils.icon_factory import setup_icon
+from napari_nninteractive.napari_utils.widget_factory import (
+    setup_button,
+    setup_checkbox,
+    setup_hswitch,
+    setup_layerselection,
+    setup_tooltipcombobox,
+    setup_vswitch,
 )
 
 
@@ -27,6 +40,8 @@ class BaseGUI(QWidget):
 
     def __init__(self, viewer: Viewer, parent: Optional[QWidget] = None):
         super().__init__(parent)
+        self._width = 300
+
         self._viewer = viewer
         self.session_cfg = None
 
@@ -40,14 +55,14 @@ class BaseGUI(QWidget):
         _main_layout.addWidget(self._init_interaction_selection())  # Interaction Selection
         _main_layout.addWidget(self._init_run_button())  # Run Button
         _main_layout.addWidget(self._init_export_button())  # Run Button
+
+        spacer = QSpacerItem(20, 40, QSizePolicy.Minimum)  # , QSizePolicy.Expanding)
+        _main_layout.addItem(spacer)
+
         _main_layout.addWidget(self._init_acknowledgements())  # Acknowledgements
 
         self._unlock_session()
-        # self._viewer.bind_key("Ctrl+Enter", self.on_run, overwrite=True)
-        self._viewer.bind_key("R", self.on_run, overwrite=True)
         self._viewer.bind_key("Ctrl+Q", self._close, overwrite=True)
-        # self._viewer.bind_key("+", self.prompt_button._next, overwrite=True)
-        self._viewer.bind_key("T", self.prompt_button._next, overwrite=True)
 
     # Base Behaviour
     def _close(self):
@@ -65,6 +80,7 @@ class BaseGUI(QWidget):
         self.run_button.setEnabled(False)
         self.run_ckbx.setEnabled(False)
         self.export_button.setEnabled(False)
+        self.reset_interaction_button.setEnabled(False)
 
     def _lock_session(self):
         """Locks the session, disabling model and image selection, and enabling control buttons."""
@@ -76,6 +92,7 @@ class BaseGUI(QWidget):
         self.run_button.setEnabled(True)
         self.run_ckbx.setEnabled(True)
         self.export_button.setEnabled(True)
+        self.reset_interaction_button.setEnabled(True)
 
     def _reset_session(self):
         """Clear Layers, reset session configuration and unlock the session controls."""
@@ -103,10 +120,10 @@ class BaseGUI(QWidget):
                 UserWarning,
                 stacklevel=2,
             )
-        self.model_selection = add_tooltipcombobox(_layout, _folders, self._reset_session)
-        self.model_selection.setFixedWidth(250)
+        self.model_selection = setup_tooltipcombobox(_layout, _folders, self._reset_session)
+        self.model_selection.setFixedWidth(self._width)
 
-        self.bg_preprocessing_ckbx = add_checkbox(
+        self.bg_preprocessing_ckbx = setup_checkbox(
             _layout,
             "Background Preprocessing",
             False,
@@ -121,10 +138,10 @@ class BaseGUI(QWidget):
         _group_box = QGroupBox("Image Selection:")
         _layout = QVBoxLayout()
 
-        self.image_selection = add_layerselection(
+        self.image_selection = setup_layerselection(
             _layout, viewer=self._viewer, layer_type=Image, function=self._reset_session
         )
-        self.image_selection.setFixedWidth(250)
+        self.image_selection.setFixedWidth(self._width)
 
         _group_box.setLayout(_layout)
         return _group_box
@@ -134,15 +151,25 @@ class BaseGUI(QWidget):
         _group_box = QGroupBox("")
         _layout = QVBoxLayout()
 
-        self.init_button = add_button(
+        self.init_button = setup_button(
             _layout, "Initialize", self.on_init, tooltips="Initialize the Model and Image Pair"
         )
-        self.reset_button = add_button(
+        self.reset_interaction_button = setup_button(
+            _layout,
+            "Reset Interactions",
+            self.on_reset_interations,
+            tooltips="Reset the current interaction",
+        )
+        self.reset_button = setup_button(
             _layout,
             "Next Object",
             self.on_next,
             tooltips="Keep Model and Image Pair, just reset the interactions",
         )
+
+        setup_icon(self.init_button, "new_labels", theme=self._viewer.theme)
+        setup_icon(self.reset_interaction_button, "delete", theme=self._viewer.theme)
+        setup_icon(self.reset_button, "step_right", theme=self._viewer.theme)
 
         _group_box.setLayout(_layout)
         return _group_box
@@ -152,14 +179,14 @@ class BaseGUI(QWidget):
         _group_box = QGroupBox("Prompt:")
         _layout = QHBoxLayout()
 
-        options = ["positive", "negative"]
-        shortcuts = ["Ctrl+Alt++", "Ctrl+Alt+-"]
-        self.prompt_button = HSwitch(
-            options, self.on_prompt_selected, default=0, shortcuts=shortcuts, add_tooltip=False
+        self.prompt_button = setup_hswitch(
+            _layout,
+            options=["positive", "negative"],
+            function=self.on_prompt_selected,
+            default=0,
+            shortcut="T",
+            tooltips="Press T to switch",
         )
-        self.prompt_button.setToolTip("Press T to switch")
-        _layout.addWidget(self.prompt_button)
-
         _group_box.setLayout(_layout)
         return _group_box
 
@@ -168,9 +195,13 @@ class BaseGUI(QWidget):
         _group_box = QGroupBox("Interaction:")
         _layout = QVBoxLayout()
 
-        options = ["Point", "BBox", "Scribble"]
-        self.interaction_button = VSwitch(options, self.on_interaction_selected)
-        _layout.addWidget(self.interaction_button)
+        self.interaction_button = setup_vswitch(
+            _layout, options=["Point", "BBox", "Scribble"], function=self.on_interaction_selected
+        )
+
+        setup_icon(self.interaction_button.buttons[0], "new_points", theme=self._viewer.theme)
+        setup_icon(self.interaction_button.buttons[1], "rectangle", theme=self._viewer.theme)
+        setup_icon(self.interaction_button.buttons[2], "paint", theme=self._viewer.theme)
 
         _group_box.setLayout(_layout)
         return _group_box
@@ -180,14 +211,16 @@ class BaseGUI(QWidget):
         _group_box = QGroupBox("")
         _layout = QVBoxLayout()
 
-        self.run_button = add_button(_layout, "Run", self.on_run, tooltips="Press R")
-        self.run_ckbx = add_checkbox(
+        self.run_button = setup_button(
+            _layout, "Run", self.on_run, shortcut="R", tooltips="Press R"
+        )
+        self.run_ckbx = setup_checkbox(
             _layout,
             "Auto Run",
             True,
             tooltips="Run automatically after each interaction",
         )
-
+        setup_icon(self.run_button, "right_arrow")
         _group_box.setLayout(_layout)
         return _group_box
 
@@ -196,9 +229,8 @@ class BaseGUI(QWidget):
         _group_box = QGroupBox("")
         _layout = QVBoxLayout()
 
-        self.export_button = add_button(_layout, "Export", self._export)
-        # self.browse_button = add_button(_layout, "Browse", self.select_path)
-
+        self.export_button = setup_button(_layout, "Export", self._export)
+        setup_icon(self.export_button, "pop_out", theme=self._viewer.theme)
         _group_box.setLayout(_layout)
         return _group_box
 
@@ -206,13 +238,15 @@ class BaseGUI(QWidget):
         """Initializes acknowledgements by adding the logos"""
         _group_box = QGroupBox("")
 
+        _group_box.setStyleSheet(
+            """
+            QGroupBox {
+                background-color: white;
+            }
+        """
+        )
+
         _layout = QVBoxLayout()
-
-        import importlib.resources
-
-        from qtpy.QtCore import Qt
-        from qtpy.QtGui import QPixmap
-        from qtpy.QtWidgets import QLabel, QSizePolicy, QSpacerItem
 
         path_resources = importlib.resources.files("napari_nninteractive.resources")
         path_DKFZ = path_resources.joinpath("DKFZ_Logo.png")
@@ -221,8 +255,8 @@ class BaseGUI(QWidget):
         pixmap_DKFZ = QPixmap(str(path_DKFZ))
         pixmap_HI = QPixmap(str(path_HI))
 
-        pixmap_DKFZ = pixmap_DKFZ.scaledToWidth(250, Qt.SmoothTransformation)
-        pixmap_HI = pixmap_HI.scaledToWidth(250, Qt.SmoothTransformation)
+        pixmap_DKFZ = pixmap_DKFZ.scaledToWidth(self._width, Qt.SmoothTransformation)
+        pixmap_HI = pixmap_HI.scaledToWidth(self._width, Qt.SmoothTransformation)
 
         logo_DKFI = QLabel()
         logo_HI = QLabel()
@@ -254,6 +288,10 @@ class BaseGUI(QWidget):
                 "spacing": image_layer.scale,
             }
             self._lock_session()
+
+    def on_reset_interations(self):
+        """Reset only the current interaction"""
+        self._clear_layers()
 
     def on_next(self) -> None:
         """Resets the interactions."""

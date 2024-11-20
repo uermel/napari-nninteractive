@@ -6,6 +6,7 @@ import numpy as np
 from napari._qt.layer_controls.qt_layer_controls_container import layer_to_controls
 from napari.layers import Labels
 from napari.layers.base._base_constants import ActionType
+from napari.utils.transforms import Affine
 from napari.viewer import Viewer
 from qtpy.QtWidgets import QFileDialog, QWidget
 
@@ -124,6 +125,7 @@ class LayerControls(BaseGUI):
         _layer_res = Labels(
             self._data_result,
             name=self.label_layer_name,
+            opacity=0.5,
             affine=self.session_cfg["affine"],
             colormap=self.colormap[_index],
             metadata=self.session_cfg["metadata"],
@@ -152,13 +154,31 @@ class LayerControls(BaseGUI):
             raise ValueError(
                 "Image is non-orthogonal. This is not supported by Napari and causes unreliable results. Select another image."
             )
+
+        # Get some Meta data of the input image
+        _ndim = image_layer.ndim
+        _shape = image_layer.data.shape
+        _affine = image_layer.affine
+        _spacing = image_layer.metadata.get("spacing", image_layer.scale)
+
+        # Make 2d Data to 3d by adding a dummy dim
+        if _ndim == 2:
+            _ndim = 3
+            _shape = np.insert(_shape, 0, 1)
+            _spacing = np.insert(_spacing, 0, 1)
+            affine_4x4 = np.eye(4)
+            affine_4x4[:3, :3] = _affine
+            _affine = Affine(affine_matrix=affine_4x4)
+
         self.session_cfg = {
             "name": image_name,
             "model": model_name,
-            "ndim": image_layer.ndim,
-            "shape": image_layer.data.shape,
-            "affine": image_layer.affine,
-            "spacing": image_layer.metadata.get("spacing", image_layer.scale),
+            "ndim": _ndim,
+            "ndim_source": image_layer.ndim,
+            "shape": _shape,
+            "affine": _affine,
+            "affine_source": image_layer.affine,
+            "spacing": _spacing,
             "source": image_layer.source,
             "metadata": image_layer.metadata,
         }
@@ -171,6 +191,11 @@ class LayerControls(BaseGUI):
 
         # Lock the Session
         self._lock_session()
+
+    def on_reset_interations(self):
+        """Reset only the current interaction"""
+        super().on_reset_interations()
+        self.on_layer_selected()
 
     def on_next(self) -> None:
         """
@@ -250,6 +275,7 @@ class LayerControls(BaseGUI):
             and event.action == ActionType.ADDED
             and not self._viewer.layers[event.source.name].is_free()
         ):
+            self._viewer.layers[event.source.name].refresh()
             self.on_run()
 
     def on_layer_selected(self, *args, **kwargs) -> None:
@@ -262,11 +288,15 @@ class LayerControls(BaseGUI):
             **kwargs: Additional keyword arguments for the method.
         """
         _layer = self._viewer.layers.selection.active
-        if _layer is not None:
+
+        if _layer is None:
+            key = None
+        else:
             key = next((k for k, v in self.layer_dict.items() if v == _layer.name), None)
-            self.interaction_type = key
-            self.interaction_button._uncheck()
-            self.interaction_button._check(self.interaction_type)
+
+        self.interaction_type = key
+        self.interaction_button._uncheck()
+        self.interaction_button._check(self.interaction_type)
 
     # Inference Behaviour
     def inference(self, data: Any, index: int) -> None:
@@ -282,7 +312,8 @@ class LayerControls(BaseGUI):
         )
 
     def _export(self) -> None:
-
+        """Export all Label layers belonging to the current image & model pair as separate files
+        using the napari plugins"""
         _img_layer = self._viewer.layers[self.session_cfg["name"]]
         _img_file = Path(_img_layer.source.path).name
         _dtype = ".nii.gz" if str(_img_file).endswith(".nii.gz") else Path(_img_file).suffix
@@ -323,7 +354,22 @@ class LayerControls(BaseGUI):
 
                     _file_name = f"{_output_file}_{str(_index).zfill(4)}{_dtype}"
                     _file = str(Path(_output_dir).joinpath(_file_name))
+                    if self.session_cfg["ndim_source"] == 2:
+                        # For 2d data we need to create a temporal layer removing the dummy third
+                        # dimension and export the data in the correct way.
+                        _d = _layer.data[0]
 
-                    _layer.save(_file)
+                        _layer_temp = Labels(
+                            _d,
+                            name="Temp",
+                            affine=self.session_cfg["affine_source"],
+                            colormap=self.colormap[_index],
+                            metadata=self.session_cfg["metadata"],
+                        )
+                        _layer_temp._source = self.session_cfg["source"]
+                        _layer_temp.save(_file)
+                        del _layer_temp
+                    else:
+                        _layer.save(_file)
         else:
             raise ValueError("Output path has to be a directory, not a file")
