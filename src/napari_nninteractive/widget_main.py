@@ -1,10 +1,12 @@
 from pathlib import Path
 from typing import Any, Optional
 
+import nnunetv2
 import numpy as np
 import torch
+from batchgenerators.utilities.file_and_folder_operations import join, load_json
 from napari.viewer import Viewer
-from nnunetv2.inference.nnInteractive.interactive_inference import nnInteractiveInferenceSession
+from nnunetv2.utilities.find_class_by_name import recursive_find_python_class
 from qtpy.QtWidgets import QWidget
 
 from napari_nninteractive.widget_controls import LayerControls
@@ -44,7 +46,21 @@ class nnInteractiveWidget(LayerControls):
         """
         super().on_init(*args, **kwargs)
         if self.session is None:
-            self.session = nnInteractiveInferenceSession(
+            _cktp = Path(self.nnUNet_results).joinpath(
+                self.nnUNet_dataset, self.model_selection.currentText()
+            )
+            if Path(_cktp).joinpath("inference_session_class.json").is_file():
+                inference_class = load_json(Path(_cktp).joinpath("inference_session_class.json"))
+            else:
+                inference_class = "nnInteractiveInferenceSession"
+
+            inference_class = recursive_find_python_class(
+                join(nnunetv2.__path__[0], "inference", "nnInteractive"),
+                inference_class,
+                "nnunetv2.inference.nnInteractive",
+            )
+
+            self.session = inference_class(
                 device=torch.device("cuda:0"),  # can also be cpu or mps. CPU not recommended
                 use_torch_compile=False,
                 torch_n_threads=8,
