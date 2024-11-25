@@ -49,6 +49,8 @@ class nnInteractiveWidget(LayerControls):
             _cktp = Path(self.nnUNet_results).joinpath(
                 self.nnUNet_dataset, self.model_selection.currentText()
             )
+
+            # Get inference class from Checkpoint
             if Path(_cktp).joinpath("inference_session_class.json").is_file():
                 inference_class = load_json(Path(_cktp).joinpath("inference_session_class.json"))
             else:
@@ -61,6 +63,7 @@ class nnInteractiveWidget(LayerControls):
                 "nnunetv2.inference.nnInteractive",
             )
 
+            # Initialize the Session
             self.session = inference_class(
                 device=torch.device("cuda:0"),  # can also be cpu or mps. CPU not recommended
                 use_torch_compile=False,
@@ -78,6 +81,7 @@ class nnInteractiveWidget(LayerControls):
                 5,
                 "checkpoint_final.pth",
             )
+
         _data = self._viewer.layers[self.session_cfg["name"]].data
         _data = _data[np.newaxis, ...]
 
