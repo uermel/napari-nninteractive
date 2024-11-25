@@ -53,6 +53,7 @@ class nnInteractiveWidget(LayerControls):
                 inference_class = load_json(Path(_cktp).joinpath("inference_session_class.json"))
             else:
                 inference_class = "nnInteractiveInferenceSession"
+            print(inference_class)
 
             inference_class = recursive_find_python_class(
                 join(nnunetv2.__path__[0], "inference", "nnInteractive"),
@@ -75,7 +76,7 @@ class nnInteractiveWidget(LayerControls):
                     self.nnUNet_dataset, self.model_selection.currentText()
                 ),
                 5,
-                "checkpoint_best.pth",
+                "checkpoint_final.pth",
             )
         _data = self._viewer.layers[self.session_cfg["name"]].data
         _data = _data[np.newaxis, ...]
