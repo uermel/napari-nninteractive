@@ -69,9 +69,7 @@ class nnInteractiveWidget(LayerControls):
             )
 
             self.session.initialize_from_trained_model_folder(
-                Path(self.nnUNet_results).joinpath(
-                    self.nnUNet_dataset, self.model_selection.currentText()
-                ),
+                _cktp,
                 5,
                 "checkpoint_final.pth",
             )
