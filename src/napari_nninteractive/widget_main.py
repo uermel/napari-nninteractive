@@ -49,6 +49,7 @@ class nnInteractiveWidget(LayerControls):
                 inference_class = load_json(Path(_cktp).joinpath("inference_session_class.json"))
             else:
                 inference_class = "nnInteractiveInferenceSession"
+            print(inference_class)
 
             inference_class = recursive_find_python_class(
                 join(nnunetv2.__path__[0], "inference", "nnInteractive"),
@@ -67,7 +68,13 @@ class nnInteractiveWidget(LayerControls):
                 use_background_preprocessing=self.bg_preprocessing_ckbx.isChecked(),
             )
 
-            self.session.initialize_from_trained_model_folder(_cktp, 5, "checkpoint_final.pth")
+            self.session.initialize_from_trained_model_folder(
+                Path(self.nnUNet_results).joinpath(
+                    self.nnUNet_dataset, self.model_selection.currentText()
+                ),
+                5,
+                "checkpoint_final.pth",
+            )
 
         _data = self._viewer.layers[self.session_cfg["name"]].data
         _data = _data[np.newaxis, ...]
