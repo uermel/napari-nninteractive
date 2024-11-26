@@ -30,12 +30,6 @@ class nnInteractiveWidget(LayerControls):
         self.session = None
         self._viewer.dims.events.order.connect(self.on_axis_change)
 
-    # Base Behaviour
-    def _reset_session(self):
-        """Reset the current session"""
-        super()._reset_session()
-        self.session = None
-
     # Event Handlers
     def on_init(self, *args, **kwargs):
         """
@@ -87,6 +81,19 @@ class nnInteractiveWidget(LayerControls):
         self._scribble_brush_size = self.session.recommended_scribble_thickness[
             self._viewer.dims.not_displayed[0]
         ]
+        # Set the prompt type to positive
+        self.prompt_button._uncheck()
+        self.prompt_button._check(0)
+
+    def on_model_selected(self):
+        """Reset the current session completely"""
+        super().on_model_selected()
+        self.session = None
+
+    def on_image_selected(self):
+        """Reset the current sessions interaction but keep the session itself"""
+        super().on_image_selected()
+        self.session.reset_interactions()
 
     def on_reset_interations(self):
         """Reset only the current interaction"""

@@ -81,7 +81,7 @@ class LayerControls(BaseGUI):
             affine=self.session_cfg["affine"],
             metadata=self.session_cfg["metadata"],
             prompt_index=self.prompt_button.index,
-            opacity=0.5,
+            opacity=0.3,
         )
         bbox_layer.events.data.connect(self.on_auto_run)
         self._viewer.add_layer(bbox_layer)
@@ -125,7 +125,7 @@ class LayerControls(BaseGUI):
         _layer_res = Labels(
             self._data_result,
             name=self.label_layer_name,
-            opacity=0.5,
+            opacity=0.3,
             affine=self.session_cfg["affine"],
             colormap=self.colormap[_index],
             metadata=self.session_cfg["metadata"],
@@ -209,6 +209,8 @@ class LayerControls(BaseGUI):
         self.add_label_layer()
         # Clear all interaction layers
         self._clear_layers()
+        self.prompt_button._uncheck()
+        self.prompt_button._check(0)
 
     def on_prompt_selected(self) -> None:
         """

@@ -94,11 +94,11 @@ class BaseGUI(QWidget):
         self.export_button.setEnabled(True)
         self.reset_interaction_button.setEnabled(True)
 
-    def _reset_session(self):
-        """Clear Layers, reset session configuration and unlock the session controls."""
-        self.session_cfg = None
-        self._clear_layers()
-        self._unlock_session()
+    # def _reset_session(self):
+    #     """Clear Layers, reset session configuration and unlock the session controls."""
+    #     self.session_cfg = None
+    #     self._clear_layers()
+    #     self._unlock_session()
 
     def _clear_layers(self):
         """Abstract function to clear all needed layers"""
@@ -120,7 +120,7 @@ class BaseGUI(QWidget):
                 UserWarning,
                 stacklevel=2,
             )
-        self.model_selection = setup_tooltipcombobox(_layout, _folders, self._reset_session)
+        self.model_selection = setup_tooltipcombobox(_layout, _folders, self.on_model_selected)
         self.model_selection.setFixedWidth(self._width)
 
         self.bg_preprocessing_ckbx = setup_checkbox(
@@ -139,7 +139,7 @@ class BaseGUI(QWidget):
         _layout = QVBoxLayout()
 
         self.image_selection = setup_layerselection(
-            _layout, viewer=self._viewer, layer_type=Image, function=self._reset_session
+            _layout, viewer=self._viewer, layer_type=Image, function=self.on_image_selected
         )
         self.image_selection.setFixedWidth(self._width)
 
@@ -288,6 +288,16 @@ class BaseGUI(QWidget):
                 "spacing": image_layer.scale,
             }
             self._lock_session()
+
+    def on_image_selected(self):
+        """When an new image is selected reset layers and session (cfg + gui)"""
+        self._clear_layers()
+        self._unlock_session()
+
+    def on_model_selected(self):
+        """When an new model is selected reset layers and session (cfg + gui)"""
+        self._clear_layers()
+        self._unlock_session()
 
     def on_reset_interations(self):
         """Reset only the current interaction"""
