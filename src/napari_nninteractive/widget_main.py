@@ -98,7 +98,8 @@ class nnInteractiveWidget(LayerControls):
     def on_image_selected(self):
         """Reset the current sessions interaction but keep the session itself"""
         super().on_image_selected()
-        self.session.reset_interactions()
+        if self.session is not None:
+            self.session.reset_interactions()
 
     def on_reset_interations(self):
         """Reset only the current interaction"""
