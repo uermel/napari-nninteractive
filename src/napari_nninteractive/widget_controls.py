@@ -6,6 +6,7 @@ import numpy as np
 from napari._qt.layer_controls.qt_layer_controls_container import layer_to_controls
 from napari.layers import Labels
 from napari.layers.base._base_constants import ActionType
+from napari.utils.notifications import show_warning
 from napari.utils.transforms import Affine
 from napari.viewer import Viewer
 from qtpy.QtWidgets import QFileDialog, QWidget
@@ -151,8 +152,19 @@ class LayerControls(BaseGUI):
         image_layer = self._viewer.layers[image_name]
 
         if not image_layer._slice_input.is_orthogonal(image_layer.affine):
-            raise ValueError(
-                "Image is non-orthogonal. This is not supported by Napari and causes unreliable results. Select another image."
+            ndims = image_layer.ndim
+            _spacing = image_layer.metadata.get("spacing", np.ones(ndims))
+            _origin = image_layer.metadata.get("origin", np.zeros(ndims))
+            _affine_new = np.eye(ndims + 1)
+            _affine_new[:ndims, :ndims] = np.diag(_spacing)
+            _affine_new[:ndims, ndims] = _origin
+            image_layer.affine = Affine(affine_matrix=_affine_new)
+
+            self._viewer.reset_view()
+
+            show_warning(
+                "Your data is non-orthogonal. This is not supported by napari. "
+                "To fix this the direction is ignored during visualizing which changes the appearance (only visual) of your data. "
             )
 
         # Get some Meta data of the input image
