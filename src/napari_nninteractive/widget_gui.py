@@ -154,6 +154,14 @@ class BaseGUI(QWidget):
         self.init_button = setup_button(
             _layout, "Initialize", self.on_init, tooltips="Initialize the Model and Image Pair"
         )
+
+        self.propergate_ckbx = setup_checkbox(
+            _layout,
+            "Propagate predictions",
+            False,
+            tooltips="To be Done",
+        )
+
         self.reset_interaction_button = setup_button(
             _layout,
             "Reset Interactions",
@@ -278,19 +286,19 @@ class BaseGUI(QWidget):
     # Event Handlers
     def on_init(self, *args, **kwargs) -> None:
         """Initializes the session configuration based on the selected model and image."""
-        image_name = self.image_selection.currentText()
-        model_name = self.model_selection.currentText()
-        if image_name != "" and model_name != "":
-            image_layer = self._viewer.layers[image_name]
-            self.session_cfg = {
-                "name": image_name,
-                "model": model_name,
-                "ndim": image_layer.ndim,
-                "shape": image_layer.data.shape,
-                "affine": image_layer.affine,
-                "spacing": image_layer.scale,
-            }
-            self._lock_session()
+        # image_name = self.image_selection.currentText()
+        # model_name = self.model_selection.currentText()
+        # if image_name != "" and model_name != "":
+        #     image_layer = self._viewer.layers[image_name]
+        #     self.session_cfg = {
+        #         "name": image_name,
+        #         "model": model_name,
+        #         "ndim": image_layer.ndim,
+        #         "shape": image_layer.data.shape,
+        #         "affine": image_layer.affine,
+        #         "spacing": image_layer.scale,
+        #     }
+        #    self._lock_session()
 
     def on_image_selected(self):
         """When an new image is selected reset layers and session (cfg + gui)"""

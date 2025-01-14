@@ -78,6 +78,7 @@ class nnInteractiveWidget(LayerControls):
         _data = _data[np.newaxis, ...]
 
         if self.session_cfg["ndim_source"] == 2:
+            print("XXXX")
             _data = _data[np.newaxis, ...]
 
         self.session.set_image(_data, {"spacing": self.session_cfg["spacing"]})
@@ -110,10 +111,15 @@ class nnInteractiveWidget(LayerControls):
 
     def on_next(self):
         """Reset the Interactions of current session"""
+        _ind = self.interaction_button.index
         super().on_next()
         if self.session is not None:
             self.session.reset_interactions()
         self._viewer.layers[self.label_layer_name].refresh()
+
+        self.interaction_button._check(_ind)
+        self.on_interaction_selected()
+        self.prompt_button._check(0)
 
     def on_axis_change(self, event: Any):
         """Change the brush size of the scribble layer when the axis changes"""
