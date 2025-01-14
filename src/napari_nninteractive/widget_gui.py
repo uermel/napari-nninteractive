@@ -196,12 +196,15 @@ class BaseGUI(QWidget):
         _layout = QVBoxLayout()
 
         self.interaction_button = setup_vswitch(
-            _layout, options=["Point", "BBox", "Scribble"], function=self.on_interaction_selected
+            _layout,
+            options=["Point", "BBox", "Scribble", "Lasso"],
+            function=self.on_interaction_selected,
         )
 
         setup_icon(self.interaction_button.buttons[0], "new_points", theme=self._viewer.theme)
         setup_icon(self.interaction_button.buttons[1], "rectangle", theme=self._viewer.theme)
         setup_icon(self.interaction_button.buttons[2], "paint", theme=self._viewer.theme)
+        setup_icon(self.interaction_button.buttons[3], "polygon_lasso", theme=self._viewer.theme)
 
         _group_box.setLayout(_layout)
         return _group_box

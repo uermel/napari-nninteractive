@@ -49,7 +49,7 @@ class nnInteractiveWidget(LayerControls):
                 inference_class = load_json(Path(_cktp).joinpath("inference_session_class.json"))
             else:
                 inference_class = "nnInteractiveInferenceSession"
-            print(inference_class)
+            # print(inference_class)
 
             inference_class = recursive_find_python_class(
                 join(nnunetv2.__path__[0], "inference", "nnInteractive"),
@@ -144,7 +144,7 @@ class nnInteractiveWidget(LayerControls):
                 _max = np.max(data, axis=0)
                 bbox = [[_min[0], _max[0]], [_min[1], _max[1]], [_min[2], _max[2]]]
                 self.session.add_bbox_interaction(bbox, self.prompt_button.index == 0)
-            elif index == 2:
+            elif index == 2 or index == 3:
                 self.session.add_scribble_interaction(data, self.prompt_button.index == 0)
 
             self._viewer.layers[self.label_layer_name].refresh()

@@ -12,9 +12,11 @@ from napari.viewer import Viewer
 from qtpy.QtWidgets import QFileDialog, QWidget
 
 from napari_nninteractive.controls.bbox_controls import CustomQtBBoxControls
+from napari_nninteractive.controls.lasso_controls import CustomQtLassoControls
 from napari_nninteractive.controls.point_controls import CustomQtPointsControls
 from napari_nninteractive.controls.scribble_controls import CustomQtScribbleControls
 from napari_nninteractive.layers.bbox_layer import BBoxLayer
+from napari_nninteractive.layers.lasso_layer import LassoLayer
 from napari_nninteractive.layers.point_layer import SinglePointLayer
 from napari_nninteractive.layers.scribble_layer import ScibbleLayer
 from napari_nninteractive.utils.utils import ColorMapper, determine_layer_index
@@ -23,6 +25,7 @@ from napari_nninteractive.widget_gui import BaseGUI
 layer_to_controls[SinglePointLayer] = CustomQtPointsControls
 layer_to_controls[BBoxLayer] = CustomQtBBoxControls
 layer_to_controls[ScibbleLayer] = CustomQtScribbleControls
+layer_to_controls[LassoLayer] = CustomQtLassoControls
 
 
 class LayerControls(BaseGUI):
@@ -40,10 +43,12 @@ class LayerControls(BaseGUI):
         self.point_layer_name = "nnInteractive - Point Layer"
         self.bbox_layer_name = "nnInteractive - BBox Layer"
         self.scribble_layer_name = "nnInteractive - Scribble Layer"
+        self.lasso_layer_name = "nnInteractive - Lasso Layer"
         self.layer_dict = {
             0: self.point_layer_name,
             1: self.bbox_layer_name,
             2: self.scribble_layer_name,
+            3: self.lasso_layer_name,
         }
 
         self.label_layer_name = "nnInteractive - Label Layer"
@@ -102,6 +107,20 @@ class LayerControls(BaseGUI):
 
         scribble_layer.events.finished.connect(self.on_auto_run)
         self._viewer.add_layer(scribble_layer)
+
+    def add_lasso_layer(self) -> None:
+        """Adds a lasso layer to the viewer."""
+        lasso_layer = LassoLayer(
+            shape=self.session_cfg["shape"],
+            name=self.lasso_layer_name,
+            ndim=self.session_cfg["ndim"],
+            affine=self.session_cfg["affine"],
+            metadata=self.session_cfg["metadata"],
+            prompt_index=self.prompt_button.index,
+            opacity=0.3,
+        )
+        lasso_layer.events.data.connect(self.on_auto_run)
+        self._viewer.add_layer(lasso_layer)
 
     def add_label_layer(self) -> None:
         """
@@ -194,7 +213,7 @@ class LayerControls(BaseGUI):
             "source": image_layer.source,
             "metadata": image_layer.metadata,
         }
-
+        # print(self.session_cfg)
         # Create the target label array and layer
         self._data_result = np.zeros(self.session_cfg["shape"], dtype=np.uint8)
 
@@ -256,6 +275,8 @@ class LayerControls(BaseGUI):
             self.add_bbox_layer()
         elif self.interaction_type == 2:  # Add Scrible Layer
             self.add_scribble_layer()
+        elif self.interaction_type == 3:  # Add Lasso Layer
+            self.add_lasso_layer()
 
     def on_run(self, *args, **kwargs) -> None:
         """
@@ -273,6 +294,20 @@ class LayerControls(BaseGUI):
             and not self._viewer.layers[_layer_name].is_free()
         ):
             _data = self._viewer.layers[_layer_name].get_last()
+            # if _index == 3:
+            #     _layer = Labels(
+            #         _data,
+            #         name="XXXX",
+            #         opacity=0.3,
+            #         affine=self.session_cfg["affine"],
+            #         colormap=self.colormap[_index],
+            #         metadata=self.session_cfg["metadata"],
+            #     )
+            #
+            #     self._viewer.add_layer(_layer)
+            #
+            #     _data = self._viewer.layers[_layer_name].to_labels()
+
             self._viewer.layers[_layer_name].run()
             self.inference(_data, _index)
 
@@ -321,6 +356,7 @@ class LayerControls(BaseGUI):
             _data: The data obtained from the layer's run method.
             _index (int): The index of the layer type, corresponding to the layer_dict key.
         """
+        # print(data.shape)
         print(
             f"Inference for interaction {index} and prompt {self.prompt_button.index == 0} and valid data {data is not None} "
         )
