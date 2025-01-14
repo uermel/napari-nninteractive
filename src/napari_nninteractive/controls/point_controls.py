@@ -10,6 +10,7 @@ class CustomQtPointsControls(QtPointsControls):
             self.symbolComboBox,
             self.textDispCheckBox,
             self.outOfSliceCheckBox,
+            # self.sizeSlider,
         ]
         for field in fields_to_hide:
             label_item = self.layout().labelForField(field)

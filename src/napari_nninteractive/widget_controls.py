@@ -7,7 +7,6 @@ from napari._qt.layer_controls.qt_layer_controls_container import layer_to_contr
 from napari.layers import Labels
 from napari.layers.base._base_constants import ActionType
 from napari.utils.notifications import show_warning
-from napari.utils.transforms import Affine
 from napari.viewer import Viewer
 from qtpy.QtWidgets import QFileDialog, QWidget
 
@@ -70,12 +69,17 @@ class LayerControls(BaseGUI):
         point_layer = SinglePointLayer(
             name=self.point_layer_name,
             ndim=self.session_cfg["ndim"],
-            affine=self.session_cfg["affine"],
+            # affine=self.session_cfg["affine"],
+            scale=self.session_cfg["spacing"],
+            translate=self.session_cfg["origin"],
+            rotate=self.session_cfg["direction"],
             metadata=self.session_cfg["metadata"],
             opacity=0.7,
-            size=5,
+            # size=0.5,
             prompt_index=self.prompt_button.index,
         )
+
+        # point_layer.size = 0.2
         point_layer.events.finished.connect(self.on_auto_run)
         self._viewer.add_layer(point_layer)
 
@@ -84,7 +88,10 @@ class LayerControls(BaseGUI):
         bbox_layer = BBoxLayer(
             name=self.bbox_layer_name,
             ndim=self.session_cfg["ndim"],
-            affine=self.session_cfg["affine"],
+            # affine=self.session_cfg["affine"],
+            scale=self.session_cfg["spacing"],
+            translate=self.session_cfg["origin"],
+            rotate=self.session_cfg["direction"],
             metadata=self.session_cfg["metadata"],
             prompt_index=self.prompt_button.index,
             opacity=0.3,
@@ -98,7 +105,10 @@ class LayerControls(BaseGUI):
         scribble_layer = ScibbleLayer(
             data=_data,
             name=self.scribble_layer_name,
-            affine=self.session_cfg["affine"],
+            # affine=self.session_cfg["affine"],
+            scale=self.session_cfg["spacing"],
+            translate=self.session_cfg["origin"],
+            rotate=self.session_cfg["direction"],
             metadata=self.session_cfg["metadata"],
             prompt_index=self.prompt_button.index,
         )
@@ -114,7 +124,10 @@ class LayerControls(BaseGUI):
             shape=self.session_cfg["shape"],
             name=self.lasso_layer_name,
             ndim=self.session_cfg["ndim"],
-            affine=self.session_cfg["affine"],
+            # affine=self.session_cfg["affine"],
+            scale=self.session_cfg["spacing"],
+            translate=self.session_cfg["origin"],
+            rotate=self.session_cfg["direction"],
             metadata=self.session_cfg["metadata"],
             prompt_index=self.prompt_button.index,
             opacity=0.3,
@@ -146,7 +159,10 @@ class LayerControls(BaseGUI):
             self._data_result,
             name=self.label_layer_name,
             opacity=0.3,
-            affine=self.session_cfg["affine"],
+            # affine=self.session_cfg["affine"],
+            scale=self.session_cfg["spacing"],
+            translate=self.session_cfg["origin"],
+            rotate=self.session_cfg["direction"],
             colormap=self.colormap[_index],
             metadata=self.session_cfg["metadata"],
         )
@@ -170,36 +186,47 @@ class LayerControls(BaseGUI):
         # Get everything we need from the image layer
         image_layer = self._viewer.layers[image_name]
 
-        if not image_layer._slice_input.is_orthogonal(image_layer.affine):
-            ndims = image_layer.ndim
-            _spacing = image_layer.metadata.get("spacing", np.ones(ndims))
-            _origin = image_layer.metadata.get("origin", np.zeros(ndims))
-            _affine_new = np.eye(ndims + 1)
-            _affine_new[:ndims, :ndims] = np.diag(_spacing)
-            _affine_new[:ndims, ndims] = _origin
-            image_layer.affine = Affine(affine_matrix=_affine_new)
+        _ndim = image_layer.ndim
+        _shape = image_layer.data.shape
 
-            self._viewer.reset_view()
+        _affine = image_layer.affine
+        _spacing = image_layer.metadata.get("spacing", np.ones(_ndim))
+        _origin = image_layer.metadata.get("origin", np.zeros(_ndim))
+        _direction = image_layer.metadata.get("direction", np.eye(_ndim))
+
+        if not image_layer._slice_input.is_orthogonal(image_layer.affine):
+            _direction = np.eye(_ndim)
+            # ndims = image_layer.ndim
+            # _spacing = image_layer.metadata.get("spacing", np.ones(ndims))
+            # _origin = image_layer.metadata.get("origin", np.zeros(ndims))
+            # _direction = image_layer.metadata.get("direction", np.zeros(ndims))
+            # _affine_new = np.eye(ndims + 1)
+            # _affine_new[:ndims, :ndims] = np.diag(_spacing)
+            # _affine_new[:ndims, ndims] = _origin
+            # image_layer.affine = Affine(affine_matrix=_affine_new)
+            #
+            # self._viewer.reset_view()
 
             show_warning(
                 "Your data is non-orthogonal. This is not supported by napari. "
                 "To fix this the direction is ignored during visualizing which changes the appearance (only visual) of your data. "
             )
 
-        # Get some Meta data of the input image
-        _ndim = image_layer.ndim
-        _shape = image_layer.data.shape
-        _affine = image_layer.affine
-        _spacing = image_layer.metadata.get("spacing", image_layer.scale)
+        _step = self._viewer.dims.current_step
+        image_layer.affine = None
+        image_layer.scale = _spacing
+        image_layer.translate = _origin
+        image_layer.rotate = _direction
+        self._viewer.dims.current_step = _step
 
         # Make 2d Data to 3d by adding a dummy dim
         if _ndim == 2:
             _ndim = 3
             _shape = np.insert(_shape, 0, 1)
             _spacing = np.insert(_spacing, 0, 1)
-            affine_4x4 = np.eye(4)
-            affine_4x4[:3, :3] = _affine
-            _affine = Affine(affine_matrix=affine_4x4)
+            _temp = np.eye(_ndim)
+            _temp[:2, :2] = _direction
+            _direction = _temp
 
         self.session_cfg = {
             "name": image_name,
@@ -208,8 +235,10 @@ class LayerControls(BaseGUI):
             "ndim_source": image_layer.ndim,
             "shape": _shape,
             "affine": _affine,
-            "affine_source": image_layer.affine,
+            # "affine_source": image_layer.affine,
             "spacing": _spacing,
+            "origin": _origin,
+            "direction": _direction,
             "source": image_layer.source,
             "metadata": image_layer.metadata,
         }
@@ -294,19 +323,6 @@ class LayerControls(BaseGUI):
             and not self._viewer.layers[_layer_name].is_free()
         ):
             _data = self._viewer.layers[_layer_name].get_last()
-            # if _index == 3:
-            #     _layer = Labels(
-            #         _data,
-            #         name="XXXX",
-            #         opacity=0.3,
-            #         affine=self.session_cfg["affine"],
-            #         colormap=self.colormap[_index],
-            #         metadata=self.session_cfg["metadata"],
-            #     )
-            #
-            #     self._viewer.add_layer(_layer)
-            #
-            #     _data = self._viewer.layers[_layer_name].to_labels()
 
             self._viewer.layers[_layer_name].run()
             self.inference(_data, _index)
@@ -377,12 +393,6 @@ class LayerControls(BaseGUI):
             "Select an Output Directory",
             options=QFileDialog.DontUseNativeDialog | QFileDialog.ShowDirsOnly,
         )
-        # _output_dir = _dialog.getSaveFileName(
-        #     self,
-        #     "Select a Output Directory",
-        #     f"{_output_file}_{self.session_cfg['model']}",
-        #     options=QFileDialog.DontUseNativeDialog,
-        # )[0]
 
         if _output_dir == "":
             return
@@ -412,7 +422,7 @@ class LayerControls(BaseGUI):
                         _layer_temp = Labels(
                             _d,
                             name="Temp",
-                            affine=self.session_cfg["affine_source"],
+                            affine=self.session_cfg["affine"],
                             colormap=self.colormap[_index],
                             metadata=self.session_cfg["metadata"],
                         )
