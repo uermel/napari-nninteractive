@@ -78,7 +78,6 @@ class nnInteractiveWidget(LayerControls):
         _data = _data[np.newaxis, ...]
 
         if self.session_cfg["ndim_source"] == 2:
-            print("XXXX")
             _data = _data[np.newaxis, ...]
 
         self.session.set_image(_data, {"spacing": self.session_cfg["spacing"]})

@@ -7,11 +7,12 @@ from napari.layers.image.image import Image
 from napari.viewer import Viewer
 from nnunetv2.paths import nnUNet_results
 from qtpy.QtCore import Qt
-from qtpy.QtGui import QPixmap
+from qtpy.QtGui import QKeySequence, QPixmap
 from qtpy.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
+    QShortcut,
     QSizePolicy,
     QSpacerItem,
     QVBoxLayout,
@@ -166,13 +167,14 @@ class BaseGUI(QWidget):
             _layout,
             "Reset Interactions",
             self.on_reset_interations,
-            tooltips="Reset the current interaction",
+            tooltips="Keep Model and Image Pair, just reset the interactions",
         )
         self.reset_button = setup_button(
             _layout,
             "Next Object",
             self.on_next,
-            tooltips="Keep Model and Image Pair, just reset the interactions",
+            tooltips="Keep current segmentation and go to the next object - press M",
+            shortcut="M",
         )
 
         setup_icon(self.init_button, "new_labels", theme=self._viewer.theme)
@@ -213,6 +215,11 @@ class BaseGUI(QWidget):
         setup_icon(self.interaction_button.buttons[1], "rectangle", theme=self._viewer.theme)
         setup_icon(self.interaction_button.buttons[2], "paint", theme=self._viewer.theme)
         setup_icon(self.interaction_button.buttons[3], "polygon_lasso", theme=self._viewer.theme)
+
+        for i, shortcut in enumerate(["P", "B", "S", "L"]):
+            key = QShortcut(QKeySequence(shortcut), self.interaction_button.buttons[i])
+            key.activated.connect(lambda idx=i: self.interaction_button._on_button_pressed(idx))
+            self.interaction_button.buttons[i].setToolTip(f"press {shortcut}")
 
         _group_box.setLayout(_layout)
         return _group_box
