@@ -40,6 +40,14 @@ def determine_layer_index(name, layer_names, splitter) -> str:
     """
     layer_names = [l_name for l_name in layer_names if name in l_name and name != l_name]
     if layer_names != []:
-        return max([int(layer_name.split(splitter)[-1]) for layer_name in layer_names]) + 1
+        return (
+            max(
+                [
+                    int(layer_name.split(splitter)[0].replace("object ", ""))
+                    for layer_name in layer_names
+                ]
+            )
+            + 1
+        )
     else:
         return 0

@@ -3,7 +3,16 @@ from typing import Callable, List, Optional
 from napari.layers import Layer
 from napari.viewer import Viewer
 from qtpy.QtGui import QKeySequence
-from qtpy.QtWidgets import QCheckBox, QComboBox, QLabel, QLayout, QPushButton, QShortcut, QWidget
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QLabel,
+    QLayout,
+    QPushButton,
+    QShortcut,
+    QSpinBox,
+    QWidget,
+)
 
 from napari_nninteractive.napari_utils.widgets.layer_selection_widget import LayerSelectionWidget
 from napari_nninteractive.napari_utils.widgets.switch_widget import QHSwitch, QVSwitch
@@ -202,7 +211,7 @@ def setup_combobox(
     )
 
 
-def setup_text(layout: QLayout, text: str, verbose: bool = True, tooltips: str = None) -> QLayout:
+def setup_text(layout: QLayout, text: str, verbose: bool = False, tooltips: str = None) -> QLayout:
     """
     Adds a QLabel with the specified text to a layout, optionally printing the text
     and setting a tooltip.
@@ -256,6 +265,27 @@ def setup_button(
         layout,
         _widget,
         widget_event=_widget.clicked,
+        function=function,
+        shortcut=shortcut,
+        tooltips=tooltips,
+    )
+
+
+def setup_spinbox(
+    layout: QLayout,
+    min_val=1,
+    max_val=255,
+    function: Optional[Callable[[int], None]] = None,
+    tooltips: Optional[str] = None,
+    shortcut: Optional[str] = None,
+) -> QWidget:
+    _widget = QSpinBox()
+    _widget.setRange(min_val, max_val)
+
+    return _connect_widget(
+        layout,
+        _widget,
+        widget_event=_widget.valueChanged,
         function=function,
         shortcut=shortcut,
         tooltips=tooltips,

@@ -135,6 +135,17 @@ class LayerControls(BaseGUI):
         lasso_layer.events.data.connect(self.on_auto_run)
         self._viewer.add_layer(lasso_layer)
 
+    def init_with_mask(self):
+        _layer_data = self._viewer.layers[self.label_for_init.currentText()].data
+
+        assert (
+            _layer_data.shape == self.session_cfg["shape"]
+        )  # Labels and Image should have same shape
+
+        self._data_result = (_layer_data == self.class_for_init.value()).astype(np.uint8)
+        self.session.set_target_buffer(self._data_result)
+        self._viewer.layers[self.label_layer_name].data = self._data_result
+
     def add_label_layer(self) -> None:
         """
         Check if a layer with the layer_name already exists. If yes rename this by adding an index
@@ -146,10 +157,12 @@ class LayerControls(BaseGUI):
             _index = determine_layer_index(
                 self.label_layer_name,
                 [layer.name for layer in self._viewer.layers],
-                splitter=" - object ",
+                # splitter=" - object ",
+                splitter=" - ",
             )
             _layer = self._viewer.layers[self.label_layer_name]
-            _layer.name = f"{_layer.name} - object {_index}"
+            _layer.name = f"object {_index} - {_layer.name}"
+
             _layer.data = _layer.data.copy()
             _index += 1
         else:
@@ -196,17 +209,6 @@ class LayerControls(BaseGUI):
 
         if not image_layer._slice_input.is_orthogonal(image_layer.affine):
             _direction = np.eye(_ndim)
-            # ndims = image_layer.ndim
-            # _spacing = image_layer.metadata.get("spacing", np.ones(ndims))
-            # _origin = image_layer.metadata.get("origin", np.zeros(ndims))
-            # _direction = image_layer.metadata.get("direction", np.zeros(ndims))
-            # _affine_new = np.eye(ndims + 1)
-            # _affine_new[:ndims, :ndims] = np.diag(_spacing)
-            # _affine_new[:ndims, ndims] = _origin
-            # image_layer.affine = Affine(affine_matrix=_affine_new)
-            #
-            # self._viewer.reset_view()
-
             show_warning(
                 "Your data is non-orthogonal. This is not supported by napari. "
                 "To fix this the direction is ignored during visualizing which changes the appearance (only visual) of your data. "

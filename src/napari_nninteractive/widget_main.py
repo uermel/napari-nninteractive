@@ -48,8 +48,7 @@ class nnInteractiveWidget(LayerControls):
             if Path(_cktp).joinpath("inference_session_class.json").is_file():
                 inference_class = load_json(Path(_cktp).joinpath("inference_session_class.json"))
             else:
-                inference_class = "nnInteractiveInferenceSession"
-            # print(inference_class)
+                inference_class = "nnInteractiveInferenceSessionV2"
 
             inference_class = recursive_find_python_class(
                 join(nnunetv2.__path__[0], "inference", "nnInteractive"),
@@ -66,6 +65,7 @@ class nnInteractiveWidget(LayerControls):
                 point_interaction_use_etd=True,  # may be adapted depending on final nnInteractive version
                 verbose=False,
                 use_background_preprocessing=self.bg_preprocessing_ckbx.isChecked(),
+                do_prediction_propagation=self.propergate_ckbx.isChecked(),
             )
 
             self.session.initialize_from_trained_model_folder(
@@ -90,6 +90,12 @@ class nnInteractiveWidget(LayerControls):
         self.prompt_button._uncheck()
         self.prompt_button._check(0)
 
+        if (
+            self.use_init_ckbx.isChecked()
+            and self.label_for_init.currentText() in self._viewer.layers
+        ):
+            self.init_with_mask()
+
     def on_model_selected(self):
         """Reset the current session completely"""
         super().on_model_selected()
@@ -106,6 +112,13 @@ class nnInteractiveWidget(LayerControls):
         super().on_reset_interations()
         if self.session is not None:
             self.session.reset_interactions()
+
+        if (
+            self.use_init_ckbx.isChecked()
+            and self.label_for_init.currentText() in self._viewer.layers
+        ):
+            self.init_with_mask()
+
         self._viewer.layers[self.label_layer_name].refresh()
 
     def on_next(self):
@@ -114,11 +127,22 @@ class nnInteractiveWidget(LayerControls):
         super().on_next()
         if self.session is not None:
             self.session.reset_interactions()
+
+        if (
+            self.use_init_ckbx.isChecked()
+            and self.label_for_init.currentText() in self._viewer.layers
+        ):
+            self.init_with_mask()
+
         self._viewer.layers[self.label_layer_name].refresh()
 
         self.interaction_button._check(_ind)
         self.on_interaction_selected()
         self.prompt_button._check(0)
+
+    def on_propergate_ckbx(self, *args, **kwargs):
+        if self.session is not None:
+            self.session.set_do_prediction_propagation(self.propergate_ckbx.isChecked())
 
     def on_axis_change(self, event: Any):
         """Change the brush size of the scribble layer when the axis changes"""
@@ -149,7 +173,9 @@ class nnInteractiveWidget(LayerControls):
                 _max = np.max(data, axis=0)
                 bbox = [[_min[0], _max[0]], [_min[1], _max[1]], [_min[2], _max[2]]]
                 self.session.add_bbox_interaction(bbox, self.prompt_button.index == 0)
-            elif index == 2 or index == 3:
+            elif index == 2:
                 self.session.add_scribble_interaction(data, self.prompt_button.index == 0)
+            elif index == 3:
+                self.session.add_lasso_interaction(data, self.prompt_button.index == 0)
 
             self._viewer.layers[self.label_layer_name].refresh()

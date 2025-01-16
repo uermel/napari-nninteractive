@@ -3,7 +3,7 @@ import warnings
 from pathlib import Path
 from typing import Optional
 
-from napari.layers.image.image import Image
+from napari.layers import Image, Labels
 from napari.viewer import Viewer
 from nnunetv2.paths import nnUNet_results
 from qtpy.QtCore import Qt
@@ -25,6 +25,8 @@ from napari_nninteractive.napari_utils.widget_factory import (
     setup_checkbox,
     setup_hswitch,
     setup_layerselection,
+    setup_spinbox,
+    setup_text,
     setup_tooltipcombobox,
     setup_vswitch,
 )
@@ -52,6 +54,8 @@ class BaseGUI(QWidget):
         _main_layout.addWidget(self._init_model_selection())  # Model Selection
         _main_layout.addWidget(self._init_image_selection())  # Image Selection
         _main_layout.addWidget(self._init_control_buttons())  # Init and Reset Button
+        _main_layout.addWidget(self._init_init_buttons())  # Init and Reset Button
+
         _main_layout.addWidget(self._init_prompt_selection())  # Prompt Selection
         _main_layout.addWidget(self._init_interaction_selection())  # Interaction Selection
         _main_layout.addWidget(self._init_run_button())  # Run Button
@@ -159,8 +163,8 @@ class BaseGUI(QWidget):
         self.propergate_ckbx = setup_checkbox(
             _layout,
             "Propagate predictions",
-            False,
-            tooltips="To be Done",
+            True,
+            function=self.on_propergate_ckbx,
         )
 
         self.reset_interaction_button = setup_button(
@@ -184,6 +188,32 @@ class BaseGUI(QWidget):
         _group_box.setLayout(_layout)
         return _group_box
 
+    def _init_init_buttons(self):
+        """Initializes the control buttons (Initialize and Reset)."""
+        _group_box = QGroupBox("Initialization")
+        _layout = QVBoxLayout()
+
+        h_layout = QHBoxLayout()
+
+        self.label_for_init = setup_layerselection(h_layout, viewer=self._viewer, layer_type=Labels)
+        _text = setup_text(h_layout, "ID:")
+        _text.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        self.class_for_init = setup_spinbox(h_layout)
+
+        h_layout.setStretch(0, 10)
+        h_layout.setStretch(1, 2)
+        h_layout.setStretch(2, 3)
+        _layout.addLayout(h_layout)
+
+        self.use_init_ckbx = setup_checkbox(
+            _layout,
+            "Use Mask for Initialization",
+            False,
+        )
+
+        _group_box.setLayout(_layout)
+        return _group_box
+
     def _init_prompt_selection(self) -> QGroupBox:
         """Initializes the prompt selection as switch with options and shortcuts."""
         _group_box = QGroupBox("Prompt:")
@@ -197,6 +227,21 @@ class BaseGUI(QWidget):
             shortcut="T",
             tooltips="Press T to switch",
         )
+
+        # def on_key_event(event):
+        #     print(event)
+        #     # if event.key == Qt.Key_Control:  # Check for Ctrl key
+        #     #     if event.type == "key_press":
+        #     #         ctrl_button.setChecked(True)  # Set button to pressed
+        #     #     elif event.type == "key_release":
+        #     #         ctrl_button.setChecked(False)
+        #
+        # # self._viewer.bind_key('Control', lambda event: on_key_event(event))
+        # # key = QShortcut(QKeySequence("Control"), self.prompt_button)
+        # # # key.activated.connect(function)
+        # # key.event.connect(on_key_event)
+        # self._viewer.bind_key("Control", lambda event: on_key_event(event))
+
         _group_box.setLayout(_layout)
         return _group_box
 
@@ -293,19 +338,6 @@ class BaseGUI(QWidget):
     # Event Handlers
     def on_init(self, *args, **kwargs) -> None:
         """Initializes the session configuration based on the selected model and image."""
-        # image_name = self.image_selection.currentText()
-        # model_name = self.model_selection.currentText()
-        # if image_name != "" and model_name != "":
-        #     image_layer = self._viewer.layers[image_name]
-        #     self.session_cfg = {
-        #         "name": image_name,
-        #         "model": model_name,
-        #         "ndim": image_layer.ndim,
-        #         "shape": image_layer.data.shape,
-        #         "affine": image_layer.affine,
-        #         "spacing": image_layer.scale,
-        #     }
-        #    self._lock_session()
 
     def on_image_selected(self):
         """When an new image is selected reset layers and session (cfg + gui)"""
@@ -338,6 +370,9 @@ class BaseGUI(QWidget):
     def on_run(self, *args, **kwargs) -> None:
         """Placeholder method for run operation"""
         print("on_run")
+
+    def on_propergate_ckbx(self, *args, **kwargs):
+        print("on_propergate_ckbx", *args, **kwargs)
 
     def _export(self) -> None:
         """Placeholder method for exporting all generated label layers"""
