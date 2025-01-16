@@ -54,10 +54,9 @@ class BaseGUI(QWidget):
         _main_layout.addWidget(self._init_model_selection())  # Model Selection
         _main_layout.addWidget(self._init_image_selection())  # Image Selection
         _main_layout.addWidget(self._init_control_buttons())  # Init and Reset Button
-        _main_layout.addWidget(self._init_init_buttons())  # Init and Reset Button
-
         _main_layout.addWidget(self._init_prompt_selection())  # Prompt Selection
         _main_layout.addWidget(self._init_interaction_selection())  # Interaction Selection
+        _main_layout.addWidget(self._init_init_buttons())  # Init and Reset Button
         _main_layout.addWidget(self._init_run_button())  # Run Button
         _main_layout.addWidget(self._init_export_button())  # Run Button
 
@@ -86,6 +85,7 @@ class BaseGUI(QWidget):
         self.run_ckbx.setEnabled(False)
         self.export_button.setEnabled(False)
         self.reset_interaction_button.setEnabled(False)
+        self.load_mask_btn.setEnabled(False)
 
     def _lock_session(self):
         """Locks the session, disabling model and image selection, and enabling control buttons."""
@@ -98,6 +98,7 @@ class BaseGUI(QWidget):
         self.run_ckbx.setEnabled(True)
         self.export_button.setEnabled(True)
         self.reset_interaction_button.setEnabled(True)
+        self.load_mask_btn.setEnabled(True)
 
     # def _reset_session(self):
     #     """Clear Layers, reset session configuration and unlock the session controls."""
@@ -183,7 +184,7 @@ class BaseGUI(QWidget):
 
     def _init_init_buttons(self):
         """Initializes the control buttons (Initialize and Reset)."""
-        _group_box = QGroupBox("Initialize with Segmentation Mask")
+        _group_box = QGroupBox("Initialize Segmentation")
         _layout = QVBoxLayout()
 
         h_layout = QHBoxLayout()
@@ -193,16 +194,24 @@ class BaseGUI(QWidget):
         _text.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.class_for_init = setup_spinbox(h_layout)
 
-        h_layout.setStretch(0, 10)
-        h_layout.setStretch(1, 3)
-        h_layout.setStretch(2, 3)
+        h_layout.setStretch(0, 4)
+        h_layout.setStretch(1, 2)
+        h_layout.setStretch(2, 1)
         _layout.addLayout(h_layout)
 
-        self.use_init_ckbx = setup_checkbox(
-            _layout,
-            "Use Mask for Initialization",
-            False,
+        self.load_mask_btn = setup_button(_layout, "Initialize with Mask", self.on_load_mask)
+        setup_icon(self.load_mask_btn, "new_labels", theme=self._viewer.theme)
+
+        _txt = setup_text(
+            _layout, "<b>Warning:</b> This will reset all interactions<br>for the current object"
         )
+        # setup_icon(_txt, "warning", theme=self._viewer.theme)
+        _group_box.setLayout(_layout)
+        # self.use_init_ckbx = setup_checkbox(
+        #     _layout,
+        #     "Use Mask for Initialization",
+        #     False,
+        # )
 
         _group_box.setLayout(_layout)
         return _group_box
@@ -373,6 +382,9 @@ class BaseGUI(QWidget):
 
     def on_propagate_ckbx(self, *args, **kwargs):
         print("on_propergate_ckbx", *args, **kwargs)
+
+    def on_load_mask(self):
+        pass
 
     def _export(self) -> None:
         """Placeholder method for exporting all generated label layers"""

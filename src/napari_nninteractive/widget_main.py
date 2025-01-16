@@ -90,11 +90,11 @@ class nnInteractiveWidget(LayerControls):
         self.prompt_button._uncheck()
         self.prompt_button._check(0)
 
-        if (
-            self.use_init_ckbx.isChecked()
-            and self.label_for_init.currentText() in self._viewer.layers
-        ):
-            self.init_with_mask()
+        # if (
+        #     self.use_init_ckbx.isChecked()
+        #     and self.label_for_init.currentText() in self._viewer.layers
+        # ):
+        #     self.init_with_mask()
 
     def on_model_selected(self):
         """Reset the current session completely"""
@@ -113,11 +113,11 @@ class nnInteractiveWidget(LayerControls):
         if self.session is not None:
             self.session.reset_interactions()
 
-        if (
-            self.use_init_ckbx.isChecked()
-            and self.label_for_init.currentText() in self._viewer.layers
-        ):
-            self.init_with_mask()
+        # if (
+        #     self.use_init_ckbx.isChecked()
+        #     and self.label_for_init.currentText() in self._viewer.layers
+        # ):
+        #     self.init_with_mask()
 
         self._viewer.layers[self.label_layer_name].refresh()
 
@@ -128,11 +128,11 @@ class nnInteractiveWidget(LayerControls):
         if self.session is not None:
             self.session.reset_interactions()
 
-        if (
-            self.use_init_ckbx.isChecked()
-            and self.label_for_init.currentText() in self._viewer.layers
-        ):
-            self.init_with_mask()
+        # if (
+        #     self.use_init_ckbx.isChecked()
+        #     and self.label_for_init.currentText() in self._viewer.layers
+        # ):
+        #     self.init_with_mask()
 
         self._viewer.layers[self.label_layer_name].refresh()
 
@@ -179,3 +179,7 @@ class nnInteractiveWidget(LayerControls):
                 self.session.add_lasso_interaction(data, self.prompt_button.index == 0)
 
             self._viewer.layers[self.label_layer_name].refresh()
+
+    def on_load_mask(self):
+        self.on_reset_interations()
+        self.init_with_mask()

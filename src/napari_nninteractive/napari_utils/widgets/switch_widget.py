@@ -13,7 +13,7 @@ class _QSwitch(QWidget):
         self.options = []
         self.value = None
         self.index = None
-
+        self._layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self._layout)
 
     def addItems(self, items):
