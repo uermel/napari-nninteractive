@@ -156,7 +156,7 @@ class BaseGUI(QWidget):
             _layout, "Initialize", self.on_init, tooltips="Initialize the Model and Image Pair"
         )
 
-        self.propergate_ckbx = setup_checkbox(
+        self.propagate_ckbx = setup_checkbox(
             _layout,
             "Propagate predictions",
             False,
