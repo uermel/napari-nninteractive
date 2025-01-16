@@ -65,7 +65,7 @@ class nnInteractiveWidget(LayerControls):
                 point_interaction_use_etd=True,  # may be adapted depending on final nnInteractive version
                 verbose=False,
                 use_background_preprocessing=self.bg_preprocessing_ckbx.isChecked(),
-                do_prediction_propagation=self.propergate_ckbx.isChecked(),
+                do_prediction_propagation=self.propagate_ckbx.isChecked(),
             )
 
             self.session.initialize_from_trained_model_folder(
@@ -140,9 +140,9 @@ class nnInteractiveWidget(LayerControls):
         self.on_interaction_selected()
         self.prompt_button._check(0)
 
-    def on_propergate_ckbx(self, *args, **kwargs):
+    def on_propagate_ckbx(self, *args, **kwargs):
         if self.session is not None:
-            self.session.set_do_prediction_propagation(self.propergate_ckbx.isChecked())
+            self.session.set_do_prediction_propagation(self.propagate_ckbx.isChecked())
 
     def on_axis_change(self, event: Any):
         """Change the brush size of the scribble layer when the axis changes"""

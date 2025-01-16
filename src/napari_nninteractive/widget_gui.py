@@ -164,7 +164,7 @@ class BaseGUI(QWidget):
             _layout,
             "Propagate predictions",
             True,
-            function=self.on_propergate_ckbx,
+            function=self.on_propagate_ckbx,
         )
 
         self.reset_interaction_button = setup_button(
@@ -371,7 +371,7 @@ class BaseGUI(QWidget):
         """Placeholder method for run operation"""
         print("on_run")
 
-    def on_propergate_ckbx(self, *args, **kwargs):
+    def on_propagate_ckbx(self, *args, **kwargs):
         print("on_propergate_ckbx", *args, **kwargs)
 
     def _export(self) -> None:
