@@ -34,20 +34,12 @@ class ColorMapper:
         return {None: (0, 0, 0, 0), 0: (0, 0, 0, 0), 1: _color}
 
 
-def determine_layer_index(name, layer_names, splitter) -> str:
+def determine_layer_index(names, prefix, postfix) -> str:
     """
     Determines the index assigned to the next layer.
     """
-    layer_names = [l_name for l_name in layer_names if name in l_name and name != l_name]
-    if layer_names != []:
-        return (
-            max(
-                [
-                    int(layer_name.split(splitter)[0].replace("object ", ""))
-                    for layer_name in layer_names
-                ]
-            )
-            + 1
-        )
-    else:
-        return 0
+    names = [name for name in names if name.startswith(prefix) and name.endswith(postfix)]
+    names = [int(name.replace(prefix, "").replace(postfix, "")) for name in names]
+
+    _index = max(names) + 1 if names != [] else 0
+    return _index

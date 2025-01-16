@@ -155,14 +155,12 @@ class LayerControls(BaseGUI):
         """
         if self.label_layer_name in self._viewer.layers:
             _index = determine_layer_index(
-                self.label_layer_name,
-                [layer.name for layer in self._viewer.layers],
-                # splitter=" - object ",
-                splitter=" - ",
+                names=[layer.name for layer in self._viewer.layers if isinstance(layer, Labels)],
+                prefix="object ",
+                postfix=f" - {self.session_cfg['name']}",
             )
             _layer = self._viewer.layers[self.label_layer_name]
-            _layer.name = f"object {_index} - {_layer.name}"
-
+            _layer.name = f"object {_index} - {self.session_cfg['name']}"
             _layer.data = _layer.data.copy()
             _index += 1
         else:
@@ -407,12 +405,21 @@ class LayerControls(BaseGUI):
                 if self.label_layer_name in _layer.name:
                     if self.label_layer_name == _layer.name:
                         _index = determine_layer_index(
-                            self.label_layer_name,
-                            [layer.name for layer in self._viewer.layers],
-                            splitter=" - object ",
+                            names=[
+                                layer.name
+                                for layer in self._viewer.layers
+                                if isinstance(layer, Labels)
+                            ],
+                            prefix="object ",
+                            postfix=f" - {self.session_cfg['name']}",
                         )
+
                     else:
-                        _index = int(_layer.name.split(" - object ")[-1])
+                        _index = int(
+                            _layer.name.replace("object ", "").replace(
+                                f" - {self.session_cfg['name']}", ""
+                            )
+                        )
 
                     _file_name = f"{_output_file}_{str(_index).zfill(4)}{_dtype}"
                     _file = str(Path(_output_dir).joinpath(_file_name))

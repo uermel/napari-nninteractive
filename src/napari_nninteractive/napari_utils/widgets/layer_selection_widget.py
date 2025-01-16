@@ -17,6 +17,7 @@ class LayerSelectionWidget(QComboBox):
         self.value = self.currentText()
         self.currentIndexChanged.connect(self.update_tooltip)
         self.update_tooltip()
+        self.layer_names = {}
 
     def _update(self, event):
         """
@@ -25,15 +26,36 @@ class LayerSelectionWidget(QComboBox):
         Args:
             event: The Napari event triggered by a layer being added or removed.
         """
+        # print(event.type)
+        # for attr in dir(event):
+        #     if not attr.startswith("_"):  # Skip private attributes
+        #         print(f"{attr}: {getattr(event, attr)}")
 
-        layer = event.value
-        if isinstance(layer, self.layer_type):
-            if event.type == "removed":
+        if event.type == "removed":
+            layer = event.value
+            if isinstance(layer, self.layer_type):
+
                 item_index = self.findText(layer.name)
                 if item_index != -1:
                     self.removeItem(item_index)
-            elif event.type == "inserted":
+                    del self.layer_names[layer]
+        elif event.type == "inserted":
+            layer = event.value
+            if isinstance(layer, self.layer_type):
                 self.addItem(layer.name)
+                self.layer_names[layer] = layer.name
+                layer.events.name.connect(self._update)
+        elif event.type == "name":
+            layer = event.source  # The layer that triggered the event
+            old_name = self.layer_names.get(layer)
+            new_name = layer.name
+            self.layer_names[layer] = new_name
+
+            item_index = self.findText(old_name)
+            if item_index != -1:  # If the old name exists
+                self.setItemText(item_index, new_name)
+            else:
+                self.addItem(new_name)
 
     def connect(self, viewer: Viewer):
         """
@@ -43,16 +65,18 @@ class LayerSelectionWidget(QComboBox):
         Args:
             viewer (Viewer): The Napari viewer instance to connect to.
         """
+
         viewer.layers.events.inserted.connect(self._update)
         viewer.layers.events.removed.connect(self._update)
-
-        # Initial population of combo box with layer names
-        layer_names = [
-            layer.name
+        self.layer_names = {
+            layer: layer.name
             for layer in viewer.layers
             if self.layer_type is None or isinstance(layer, self.layer_type)
-        ]
-        self.addItems(layer_names)
+        }
+        for layer in self.layer_names:
+            layer.events.name.connect(self._update)
+
+        self.addItems(list(self.layer_names.values()))
 
     def update_tooltip(self):
         # Set the tooltip to the current item’s text

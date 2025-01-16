@@ -160,13 +160,6 @@ class BaseGUI(QWidget):
             _layout, "Initialize", self.on_init, tooltips="Initialize the Model and Image Pair"
         )
 
-        self.propagate_ckbx = setup_checkbox(
-            _layout,
-            "Propagate predictions",
-            True,
-            function=self.on_propagate_ckbx,
-        )
-
         self.reset_interaction_button = setup_button(
             _layout,
             "Reset Interactions",
@@ -190,18 +183,18 @@ class BaseGUI(QWidget):
 
     def _init_init_buttons(self):
         """Initializes the control buttons (Initialize and Reset)."""
-        _group_box = QGroupBox("Initialization")
+        _group_box = QGroupBox("Initialize with Segmentation Mask")
         _layout = QVBoxLayout()
 
         h_layout = QHBoxLayout()
 
         self.label_for_init = setup_layerselection(h_layout, viewer=self._viewer, layer_type=Labels)
-        _text = setup_text(h_layout, "ID:")
+        _text = setup_text(h_layout, "Class ID:")
         _text.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         self.class_for_init = setup_spinbox(h_layout)
 
         h_layout.setStretch(0, 10)
-        h_layout.setStretch(1, 2)
+        h_layout.setStretch(1, 3)
         h_layout.setStretch(2, 3)
         _layout.addLayout(h_layout)
 
@@ -260,6 +253,13 @@ class BaseGUI(QWidget):
         setup_icon(self.interaction_button.buttons[1], "rectangle", theme=self._viewer.theme)
         setup_icon(self.interaction_button.buttons[2], "paint", theme=self._viewer.theme)
         setup_icon(self.interaction_button.buttons[3], "polygon_lasso", theme=self._viewer.theme)
+
+        self.propagate_ckbx = setup_checkbox(
+            _layout,
+            "Propagate predictions",
+            True,
+            function=self.on_propagate_ckbx,
+        )
 
         for i, shortcut in enumerate(["P", "B", "S", "L"]):
             key = QShortcut(QKeySequence(shortcut), self.interaction_button.buttons[i])
