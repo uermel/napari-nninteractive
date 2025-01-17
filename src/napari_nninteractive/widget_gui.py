@@ -54,9 +54,9 @@ class BaseGUI(QWidget):
         _main_layout.addWidget(self._init_model_selection())  # Model Selection
         _main_layout.addWidget(self._init_image_selection())  # Image Selection
         _main_layout.addWidget(self._init_control_buttons())  # Init and Reset Button
+        _main_layout.addWidget(self._init_init_buttons())  # Init and Reset Button
         _main_layout.addWidget(self._init_prompt_selection())  # Prompt Selection
         _main_layout.addWidget(self._init_interaction_selection())  # Interaction Selection
-        _main_layout.addWidget(self._init_init_buttons())  # Init and Reset Button
         _main_layout.addWidget(self._init_run_button())  # Run Button
         _main_layout.addWidget(self._init_export_button())  # Run Button
 
@@ -200,7 +200,8 @@ class BaseGUI(QWidget):
         _layout.addLayout(h_layout)
 
         self.load_mask_btn = setup_button(_layout, "Initialize with Mask", self.on_load_mask)
-        setup_icon(self.load_mask_btn, "new_labels", theme=self._viewer.theme)
+        # setup_icon(self.load_mask_btn, "new_labels", theme=self._viewer.theme)
+        setup_icon(self.load_mask_btn, "logo_silhouette", theme=self._viewer.theme)
 
         _txt = setup_text(
             _layout, "<b>Warning:</b> This will reset all interactions<br>for the current object"
@@ -288,10 +289,18 @@ class BaseGUI(QWidget):
         )
         self.run_ckbx = setup_checkbox(
             _layout,
-            "Auto Run",
+            "Auto Run Prediction",
             True,
             tooltips="Run automatically after each interaction",
         )
+
+        self.add_ckbx = setup_checkbox(
+            _layout,
+            "Auto Add Interaction",
+            True,
+            tooltips="Add interaction automatically to session",
+        )
+
         setup_icon(self.run_button, "right_arrow")
         _group_box.setLayout(_layout)
         return _group_box

@@ -181,5 +181,17 @@ class nnInteractiveWidget(LayerControls):
             self._viewer.layers[self.label_layer_name].refresh()
 
     def on_load_mask(self):
-        self.on_reset_interations()
-        self.init_with_mask()
+
+        _layer_data = self._viewer.layers[self.label_for_init.currentText()].data
+
+        assert (
+            _layer_data.shape == self.session_cfg["shape"]
+        )  # Labels and Image should have same shape
+
+        data = (_layer_data == self.class_for_init.value()).astype(np.uint8)
+
+        if self.session is not None:
+            print("DATA Shape", data.shape)
+            self.session.add_initial_seg_interaction(data)
+        # self.on_reset_interations()
+        # self.init_with_mask()
