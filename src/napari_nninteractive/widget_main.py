@@ -1,3 +1,4 @@
+import warnings
 from pathlib import Path
 from typing import Any, Optional
 
@@ -154,31 +155,39 @@ class nnInteractiveWidget(LayerControls):
                 self._viewer.layers[self.scribble_layer_name].brush_size = self._scribble_brush_size
 
     # Inference Behaviour
-    def inference(self, data: Any, index: int):
-        """
-        Performs inference on the provided data.
 
-        Args:
-            data: The data obtained from the layer's run method.
-            index (int): The index of the layer type, corresponding to the layer_dict key.
-        """
-        if data is not None:
+    def add_interaction(self):
+        _index = self.interaction_button.index
+        _layer_name = self.layer_dict.get(_index)
+        if (
+            _layer_name is not None
+            and _layer_name in self._viewer.layers
+            and not self._viewer.layers[_layer_name].is_free()
+        ):
+            data = self._viewer.layers[_layer_name].get_last()
 
-            if index == 0:
-                self._viewer.layers[self.point_layer_name].refresh(force=True)
-                self.session.add_point_interaction(data, self.prompt_button.index == 0)
-            elif index == 1:
-                # add_bbox_interaction expects [[xmin, xmax], [ymin, ymax], [zmin, zmax]]
-                _min = np.min(data, axis=0)
-                _max = np.max(data, axis=0)
-                bbox = [[_min[0], _max[0]], [_min[1], _max[1]], [_min[2], _max[2]]]
-                self.session.add_bbox_interaction(bbox, self.prompt_button.index == 0)
-            elif index == 2:
-                self.session.add_scribble_interaction(data, self.prompt_button.index == 0)
-            elif index == 3:
-                self.session.add_lasso_interaction(data, self.prompt_button.index == 0)
+            self._viewer.layers[_layer_name].run()
+            # self.inference(_data, _index)
 
-            self._viewer.layers[self.label_layer_name].refresh()
+            if data is not None:
+                _prompt = self.prompt_button.index == 0
+                _auto_run = self.run_ckbx.isChecked()
+
+                if _index == 0:
+                    self._viewer.layers[self.point_layer_name].refresh(force=True)
+                    self.session.add_point_interaction(data, _prompt, _auto_run)
+                elif _index == 1:
+                    # add_bbox_interaction expects [[xmin, xmax], [ymin, ymax], [zmin, zmax]]
+                    _min = np.min(data, axis=0)
+                    _max = np.max(data, axis=0)
+                    bbox = [[_min[0], _max[0]], [_min[1], _max[1]], [_min[2], _max[2]]]
+                    self.session.add_bbox_interaction(bbox, _prompt, _auto_run)
+                elif _index == 2:
+                    self.session.add_scribble_interaction(data, _prompt, _auto_run)
+                elif _index == 3:
+                    self.session.add_lasso_interaction(data, _prompt, _auto_run)
+
+                self._viewer.layers[self.label_layer_name].refresh()
 
     def on_load_mask(self):
 
@@ -188,10 +197,11 @@ class nnInteractiveWidget(LayerControls):
             _layer_data.shape == self.session_cfg["shape"]
         )  # Labels and Image should have same shape
 
-        data = (_layer_data == self.class_for_init.value()).astype(np.uint8)
+        data = _layer_data == self.class_for_init.value()
 
-        if self.session is not None:
-            print("DATA Shape", data.shape)
-            self.session.add_initial_seg_interaction(data)
-        # self.on_reset_interations()
-        # self.init_with_mask()
+        if np.any(data):
+            if self.session is not None:
+                self.session.add_initial_seg_interaction(data.astype(np.uint8))
+                self._viewer.layers[self.label_layer_name].refresh()
+        else:
+            warnings.warn("Mask is not valid - probably its empty", UserWarning, stacklevel=1)

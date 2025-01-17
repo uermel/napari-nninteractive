@@ -86,6 +86,8 @@ class BaseGUI(QWidget):
         self.export_button.setEnabled(False)
         self.reset_interaction_button.setEnabled(False)
         self.load_mask_btn.setEnabled(False)
+        self.add_button.setEnabled(False)
+        self.add_ckbx.setEnabled(False)
 
     def _lock_session(self):
         """Locks the session, disabling model and image selection, and enabling control buttons."""
@@ -99,6 +101,8 @@ class BaseGUI(QWidget):
         self.export_button.setEnabled(True)
         self.reset_interaction_button.setEnabled(True)
         self.load_mask_btn.setEnabled(True)
+        self.add_button.setEnabled(True)
+        self.add_ckbx.setEnabled(True)
 
     # def _reset_session(self):
     #     """Clear Layers, reset session configuration and unlock the session controls."""
@@ -219,7 +223,7 @@ class BaseGUI(QWidget):
 
     def _init_prompt_selection(self) -> QGroupBox:
         """Initializes the prompt selection as switch with options and shortcuts."""
-        _group_box = QGroupBox("Prompt:")
+        _group_box = QGroupBox("Prompt Type:")
         _layout = QHBoxLayout()
 
         self.prompt_button = setup_hswitch(
@@ -250,7 +254,7 @@ class BaseGUI(QWidget):
 
     def _init_interaction_selection(self) -> QGroupBox:
         """Initializes the interaction selection as switch with options and shortcuts."""
-        _group_box = QGroupBox("Interaction:")
+        _group_box = QGroupBox("Interaction Tools:")
         _layout = QVBoxLayout()
 
         self.interaction_button = setup_vswitch(
@@ -281,12 +285,19 @@ class BaseGUI(QWidget):
 
     def _init_run_button(self) -> QGroupBox:
         """Initializes the run button and auto-run checkbox"""
-        _group_box = QGroupBox("")
+        _group_box = QGroupBox("Manual Control:")
         _layout = QVBoxLayout()
 
-        self.run_button = setup_button(
-            _layout, "Run", self.on_run, shortcut="R", tooltips="Press R"
+        h_layout = QHBoxLayout()
+        _layout.addLayout(h_layout)
+
+        self.add_button = setup_button(
+            h_layout, "Add Interaction", self.add_interaction, shortcut="R", tooltips="Press R"
         )
+        self.run_button = setup_button(
+            h_layout, "Run", self.on_run, shortcut="R", tooltips="Press R"
+        )
+
         self.run_ckbx = setup_checkbox(
             _layout,
             "Auto Run Prediction",
@@ -302,6 +313,7 @@ class BaseGUI(QWidget):
         )
 
         setup_icon(self.run_button, "right_arrow")
+        setup_icon(self.add_button, "add")
         _group_box.setLayout(_layout)
         return _group_box
 

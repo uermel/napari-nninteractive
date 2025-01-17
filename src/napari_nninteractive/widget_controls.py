@@ -80,7 +80,7 @@ class LayerControls(BaseGUI):
         )
 
         # point_layer.size = 0.2
-        point_layer.events.finished.connect(self.on_auto_run)
+        point_layer.events.finished.connect(self.on_interaction)
         self._viewer.add_layer(point_layer)
 
     def add_bbox_layer(self) -> None:
@@ -96,7 +96,7 @@ class LayerControls(BaseGUI):
             prompt_index=self.prompt_button.index,
             opacity=0.3,
         )
-        bbox_layer.events.data.connect(self.on_auto_run)
+        bbox_layer.events.data.connect(self.on_interaction)
         self._viewer.add_layer(bbox_layer)
 
     def add_scribble_layer(self) -> None:
@@ -115,7 +115,7 @@ class LayerControls(BaseGUI):
 
         scribble_layer.brush_size = self._scribble_brush_size
 
-        scribble_layer.events.finished.connect(self.on_auto_run)
+        scribble_layer.events.finished.connect(self.on_interaction)
         self._viewer.add_layer(scribble_layer)
 
     def add_lasso_layer(self) -> None:
@@ -132,7 +132,7 @@ class LayerControls(BaseGUI):
             prompt_index=self.prompt_button.index,
             opacity=0.3,
         )
-        lasso_layer.events.data.connect(self.on_auto_run)
+        lasso_layer.events.data.connect(self.on_interaction)
         self._viewer.add_layer(lasso_layer)
 
     def init_with_mask(self):
@@ -307,41 +307,71 @@ class LayerControls(BaseGUI):
         elif self.interaction_type == 3:  # Add Lasso Layer
             self.add_lasso_layer()
 
-    def on_run(self, *args, **kwargs) -> None:
-        """
-        Executes the run method of the selected layer and triggers inference if data is obtained.
+    def on_run(self):
+        if self.session is not None:
+            self.session._predict()
+            self._viewer.layers[self.label_layer_name].refresh()
 
-        Args:
-            *args: Additional arguments for the run method.
-            **kwargs: Additional keyword arguments for the run method.
-        """
-        _index = self.interaction_button.index
-        _layer_name = self.layer_dict.get(_index)
+    # def on_run(self, *args, **kwargs) -> None:
+    #     """
+    #     Executes the run method of the selected layer and triggers inference if data is obtained.
+    #
+    #     Args:
+    #         *args: Additional arguments for the run method.
+    #         **kwargs: Additional keyword arguments for the run method.
+    #     """
+    #     _index = self.interaction_button.index
+    #     _layer_name = self.layer_dict.get(_index)
+    #     if (
+    #         _layer_name is not None
+    #         and _layer_name in self._viewer.layers
+    #         and not self._viewer.layers[_layer_name].is_free()
+    #     ):
+    #         _data = self._viewer.layers[_layer_name].get_last()
+    #
+    #         self._viewer.layers[_layer_name].run()
+    #         self.inference(_data, _index)
+
+    def on_interaction(self, event: Any):
         if (
-            _layer_name is not None
-            and _layer_name in self._viewer.layers
-            and not self._viewer.layers[_layer_name].is_free()
-        ):
-            _data = self._viewer.layers[_layer_name].get_last()
-
-            self._viewer.layers[_layer_name].run()
-            self.inference(_data, _index)
-
-    def on_auto_run(self, event: Any) -> None:
-        """
-        Automatically run an action if the checkbox is checked and data is added.
-
-        Args:
-            event (Any): The event triggering the auto-run, with information about
-                the layer action and data.
-        """
-        if (
-            self.run_ckbx.isChecked()
+            self.add_ckbx.isChecked()
             and event.action == ActionType.ADDED
             and not self._viewer.layers[event.source.name].is_free()
         ):
             self._viewer.layers[event.source.name].refresh()
-            self.on_run()
+
+            self.add_interaction()
+
+    # def add_interaction(self):
+    #     _index = self.interaction_button.index
+    #     _layer_name = self.layer_dict.get(_index)
+    #     if (
+    #             _layer_name is not None
+    #             and _layer_name in self._viewer.layers
+    #             and not self._viewer.layers[_layer_name].is_free()
+    #     ):
+    #         _data = self._viewer.layers[_layer_name].get_last()
+    #
+    #         self._viewer.layers[_layer_name].run()
+    #         self.inference(_data, _index)
+
+    # def on_auto_run(self, event: Any) -> None:
+    #     """
+    #     Automatically run an action if the checkbox is checked and data is added.
+    #
+    #     Args:
+    #         event (Any): The event triggering the auto-run, with information about
+    #             the layer action and data.
+    #     """
+    #     print("daaaaaa")
+    #     if (
+    #         self.run_ckbx.isChecked()
+    #         and event.action == ActionType.ADDED
+    #         and not self._viewer.layers[event.source.name].is_free()
+    #     ):
+    #         self._viewer.layers[event.source.name].refresh()
+    #
+    #         self.on_run()
 
     def on_layer_selected(self, *args, **kwargs) -> None:
         """
