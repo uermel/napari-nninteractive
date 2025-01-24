@@ -64,7 +64,7 @@ class nnInteractiveWidget(LayerControls):
                 torch_n_threads=8,
                 point_interaction_radius=4,  # may be adapted depending on final nnInteractive version
                 point_interaction_use_etd=True,  # may be adapted depending on final nnInteractive version
-                verbose=False,
+                verbose=True,
                 use_background_preprocessing=self.bg_preprocessing_ckbx.isChecked(),
                 do_prediction_propagation=self.propagate_ckbx.isChecked(),
             )
