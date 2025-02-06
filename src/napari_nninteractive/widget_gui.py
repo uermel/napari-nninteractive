@@ -30,6 +30,7 @@ from napari_nninteractive.napari_utils.widget_factory import (
     setup_tooltipcombobox,
     setup_vswitch,
 )
+from napari_nninteractive.napari_utils.widgets.collabsable_groubox import QCollabsableGroupBox
 
 
 class BaseGUI(QWidget):
@@ -136,7 +137,7 @@ class BaseGUI(QWidget):
         self.bg_preprocessing_ckbx = setup_checkbox(
             _layout,
             "Background Preprocessing",
-            False,
+            True,
             tooltips="Use background preprocessing for nnInteractive session",
         )
 
@@ -167,9 +168,9 @@ class BaseGUI(QWidget):
 
         self.reset_interaction_button = setup_button(
             _layout,
-            "Reset Interactions",
+            "Reset Object",
             self.on_reset_interations,
-            tooltips="Keep Model and Image Pair, just reset the interactions",
+            tooltips="Keep Model and Image Pair, just reset the interactions for the current object",
         )
         self.reset_button = setup_button(
             _layout,
@@ -188,7 +189,10 @@ class BaseGUI(QWidget):
 
     def _init_init_buttons(self):
         """Initializes the control buttons (Initialize and Reset)."""
-        _group_box = QGroupBox("Initialize Segmentation")
+        # _group_box = QGroupBox("Initialize with Segmentation")
+        _group_box = QCollabsableGroupBox("Initialize with Segmentation:")
+        _group_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        _group_box.setChecked(False)
         _layout = QVBoxLayout()
 
         h_layout = QHBoxLayout()
@@ -285,7 +289,11 @@ class BaseGUI(QWidget):
 
     def _init_run_button(self) -> QGroupBox:
         """Initializes the run button and auto-run checkbox"""
-        _group_box = QGroupBox("Manual Control:")
+        # _group_box = QGroupBox("Manual Control:")
+        _group_box = QCollabsableGroupBox("Manual Control:")
+        _group_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        _group_box.setChecked(False)
+
         _layout = QVBoxLayout()
 
         h_layout = QHBoxLayout()
