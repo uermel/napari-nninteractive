@@ -75,7 +75,7 @@ class LayerControls(BaseGUI):
             rotate=self.session_cfg["direction"],
             metadata=self.session_cfg["metadata"],
             opacity=0.7,
-            # size=0.5,
+            size=5,
             prompt_index=self.prompt_button.index,
         )
 
@@ -207,6 +207,8 @@ class LayerControls(BaseGUI):
 
         if not image_layer._slice_input.is_orthogonal(image_layer.affine):
             _direction = np.eye(_ndim)
+            # _origin = np.zeros(_ndim)
+            # _spacing = np.ones(_ndim)
             show_warning(
                 "Your data is non-orthogonal. This is not supported by napari. "
                 "To fix this the direction is ignored during visualizing which changes the appearance (only visual) of your data. "
