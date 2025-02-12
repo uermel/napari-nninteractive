@@ -48,6 +48,8 @@ class nnInteractiveWidget(LayerControls):
             # Get inference class from Checkpoint
             if Path(_cktp).joinpath("inference_session_class.json").is_file():
                 inference_class = load_json(Path(_cktp).joinpath("inference_session_class.json"))
+                if isinstance(inference_class, dict):
+                    inference_class = inference_class['inference_class']
             else:
                 inference_class = "nnInteractiveInferenceSessionV2"
 
@@ -62,8 +64,6 @@ class nnInteractiveWidget(LayerControls):
                 device=torch.device("cuda:0"),  # can also be cpu or mps. CPU not recommended
                 use_torch_compile=False,
                 torch_n_threads=8,
-                point_interaction_radius=4,  # may be adapted depending on final nnInteractive version
-                point_interaction_use_etd=True,  # may be adapted depending on final nnInteractive version
                 verbose=True,
                 use_background_preprocessing=self.bg_preprocessing_ckbx.isChecked(),
                 do_prediction_propagation=self.propagate_ckbx.isChecked(),
@@ -84,7 +84,7 @@ class nnInteractiveWidget(LayerControls):
         self.session.set_image(_data, {"spacing": self.session_cfg["spacing"]})
 
         self.session.set_target_buffer(self._data_result)
-        self._scribble_brush_size = self.session.recommended_scribble_thickness[
+        self._scribble_brush_size = self.session.preferred_scribble_thickness[
             self._viewer.dims.not_displayed[0]
         ]
         # Set the prompt type to positive
@@ -148,7 +148,7 @@ class nnInteractiveWidget(LayerControls):
     def on_axis_change(self, event: Any):
         """Change the brush size of the scribble layer when the axis changes"""
         if self.session is not None:
-            self._scribble_brush_size = self.session.recommended_scribble_thickness[
+            self._scribble_brush_size = self.session.preferred_scribble_thickness[
                 self._viewer.dims.not_displayed[0]
             ]
             if self.scribble_layer_name in self._viewer.layers:
