@@ -49,7 +49,7 @@ class nnInteractiveWidget(LayerControls):
             if Path(_cktp).joinpath("inference_session_class.json").is_file():
                 inference_class = load_json(Path(_cktp).joinpath("inference_session_class.json"))
                 if isinstance(inference_class, dict):
-                    inference_class = inference_class['inference_class']
+                    inference_class = inference_class["inference_class"]
             else:
                 inference_class = "nnInteractiveInferenceSessionV2"
 
@@ -110,17 +110,17 @@ class nnInteractiveWidget(LayerControls):
 
     def on_reset_interations(self):
         """Reset only the current interaction"""
+        _ind = self.interaction_button.index
         super().on_reset_interations()
         if self.session is not None:
             self.session.reset_interactions()
 
-        # if (
-        #     self.use_init_ckbx.isChecked()
-        #     and self.label_for_init.currentText() in self._viewer.layers
-        # ):
-        #     self.init_with_mask()
-
         self._viewer.layers[self.label_layer_name].refresh()
+
+        self.interaction_button._check(_ind)
+        self.on_interaction_selected()
+        # self.prompt_button._uncheck()
+        self.prompt_button._on_button_pressed(0)
 
     def on_next(self):
         """Reset the Interactions of current session"""

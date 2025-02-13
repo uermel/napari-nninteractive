@@ -9,6 +9,7 @@ from nnunetv2.paths import nnUNet_results
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QKeySequence, QPixmap
 from qtpy.QtWidgets import (
+    QComboBox,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -45,7 +46,8 @@ class BaseGUI(QWidget):
     def __init__(self, viewer: Viewer, parent: Optional[QWidget] = None):
         super().__init__(parent)
         self._width = 300
-
+        self.setMinimumWidth(self._width)
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self._viewer = viewer
         self.session_cfg = None
 
@@ -132,7 +134,7 @@ class BaseGUI(QWidget):
                 stacklevel=2,
             )
         self.model_selection = setup_tooltipcombobox(_layout, _folders, self.on_model_selected)
-        self.model_selection.setFixedWidth(self._width)
+        self.model_selection.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
 
         self.bg_preprocessing_ckbx = setup_checkbox(
             _layout,
@@ -152,7 +154,7 @@ class BaseGUI(QWidget):
         self.image_selection = setup_layerselection(
             _layout, viewer=self._viewer, layer_type=Image, function=self.on_image_selected
         )
-        self.image_selection.setFixedWidth(self._width)
+        self.image_selection.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
 
         _group_box.setLayout(_layout)
         return _group_box
@@ -189,18 +191,19 @@ class BaseGUI(QWidget):
 
     def _init_init_buttons(self):
         """Initializes the control buttons (Initialize and Reset)."""
-        # _group_box = QGroupBox("Initialize with Segmentation")
         _group_box = QCollabsableGroupBox("Initialize with Segmentation:")
-        _group_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         _group_box.setChecked(False)
         _layout = QVBoxLayout()
 
         h_layout = QHBoxLayout()
 
         self.label_for_init = setup_layerselection(h_layout, viewer=self._viewer, layer_type=Labels)
+        self.label_for_init.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
         _text = setup_text(h_layout, "Class ID:")
         _text.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        _text.setFixedWidth(70)
         self.class_for_init = setup_spinbox(h_layout)
+        self.class_for_init.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
 
         h_layout.setStretch(0, 4)
         h_layout.setStretch(1, 2)
@@ -208,19 +211,12 @@ class BaseGUI(QWidget):
         _layout.addLayout(h_layout)
 
         self.load_mask_btn = setup_button(_layout, "Initialize with Mask", self.on_load_mask)
-        # setup_icon(self.load_mask_btn, "new_labels", theme=self._viewer.theme)
         setup_icon(self.load_mask_btn, "logo_silhouette", theme=self._viewer.theme)
 
         _txt = setup_text(
             _layout, "<b>Warning:</b> This will reset all interactions<br>for the current object"
         )
-        # setup_icon(_txt, "warning", theme=self._viewer.theme)
         _group_box.setLayout(_layout)
-        # self.use_init_ckbx = setup_checkbox(
-        #     _layout,
-        #     "Use Mask for Initialization",
-        #     False,
-        # )
 
         _group_box.setLayout(_layout)
         return _group_box
@@ -289,9 +285,7 @@ class BaseGUI(QWidget):
 
     def _init_run_button(self) -> QGroupBox:
         """Initializes the run button and auto-run checkbox"""
-        # _group_box = QGroupBox("Manual Control:")
         _group_box = QCollabsableGroupBox("Manual Control:")
-        _group_box.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         _group_box.setChecked(False)
 
         _layout = QVBoxLayout()
@@ -338,7 +332,6 @@ class BaseGUI(QWidget):
     def _init_acknowledgements(self) -> QGroupBox:
         """Initializes acknowledgements by adding the logos"""
         _group_box = QGroupBox("")
-
         _group_box.setStyleSheet(
             """
             QGroupBox {
