@@ -192,7 +192,7 @@ class LayerControls(BaseGUI):
         # Get all model and image from the GUI
         image_name = self.image_selection.currentText()
         model_name = self.model_selection.currentText()
-        self.label_layer_name = f"nnInteractive - Label Layer - {image_name} - {model_name}"
+        # self.label_layer_name = f"nnInteractive - Label Layer - {image_name} - {model_name}"
 
         # Get everything we need from the image layer
         image_layer = self._viewer.layers[image_name]

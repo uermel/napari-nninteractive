@@ -1,5 +1,6 @@
 from typing import Any, List
 
+import napari
 import numpy as np
 from napari.layers import Shapes
 from napari.layers.base._base_constants import ActionType
@@ -134,26 +135,32 @@ class LassoLayer(BaseLayerClass, Shapes):
         Returns:
             Any: The data of the last added shape.
         """
-        # print("YYY", self._data_view._z_order[::-1][0])
 
         labels_shape = self._shape
 
         ind = self._data_view._z_order[::-1][0]
-        mask = (
-            self._data_view.shapes[ind]
-            .to_mask(labels_shape, zoom_factor=1, offset=(0, 0))
-            .astype(np.uint8)
-        )
-        return mask
-        # print(len(self.data))
-        #
-        #
-        # labels_shape = np.round(self._extent_data[1]) + 1
-        # print("LS1", labels_shape)
-        # labels_shape = np.ceil(labels_shape).astype("int")
-        # print("LS2", labels_shape)
+        polygon = self._data_view.shapes[ind]
+        dim_not_displayed = int(polygon.dims_not_displayed[0])
+        slice_id = int(self._data_view.slice_key[0])
 
-        # return self.data  # [-1]
+        # Check if the shape has more than 2 dimensions (3D case)
+        if polygon.data.shape[1] > 2:
+            polygon_2d = np.delete(polygon.data, dim_not_displayed, axis=1)
+        else:
+            polygon_2d = polygon.data
+
+        slice_shape = np.delete(labels_shape, dim_not_displayed)
+        # slice_shape = [labels_shape[i] for i in range(len(labels_shape)) if i != dim_not_displayed]
+
+        transformed_shape = napari.layers.shapes._shapes_models.polygon.Polygon(polygon_2d)
+        mask_slice = transformed_shape.to_mask(slice_shape, zoom_factor=1, offset=(0, 0)).astype(
+            np.uint8
+        )
+        mask = np.zeros(labels_shape, dtype=np.uint8)
+
+        mask = np.insert(mask, slice_id, mask_slice, axis=dim_not_displayed)
+
+        return mask
 
     # def to_labels(self, labels_shape=None):
     #     """Return an integer labels image.
