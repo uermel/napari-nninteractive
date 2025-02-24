@@ -51,6 +51,7 @@ class LayerControls(BaseGUI):
         }
 
         self.label_layer_name = "nnInteractive - Label Layer"
+        self.mask_init_layer_name = "nnInteractive - Initial Mask Layer"
         self.colormap = ColorMapper(49, seed=0.5, background_value=0)
         self._scribble_brush_size = 5
 
@@ -135,17 +136,6 @@ class LayerControls(BaseGUI):
         lasso_layer.events.data.connect(self.on_interaction)
         self._viewer.add_layer(lasso_layer)
 
-    def init_with_mask(self):
-        _layer_data = self._viewer.layers[self.label_for_init.currentText()].data
-
-        assert (
-            _layer_data.shape == self.session_cfg["shape"]
-        )  # Labels and Image should have same shape
-
-        self._data_result = (_layer_data == self.class_for_init.value()).astype(np.uint8)
-        self.session.set_target_buffer(self._data_result)
-        self._viewer.layers[self.label_layer_name].data = self._data_result
-
     def add_label_layer(self) -> None:
         """
         Check if a layer with the layer_name already exists. If yes rename this by adding an index
@@ -180,6 +170,39 @@ class LayerControls(BaseGUI):
         _layer_res._source = self.session_cfg["source"]
 
         self._viewer.add_layer(_layer_res)
+
+    def add_mask_init_layer(self) -> None:
+        """
+        Check if a layer with the layer_name already exists. If yes rename this by adding an index
+        and afterward create the layer
+        :return:
+        :rtype:
+        """
+
+        _layer_res = Labels(
+            np.zeros_like(self._data_result),
+            name=self.mask_init_layer_name,
+            opacity=0.3,
+            # affine=self.session_cfg["affine"],
+            scale=self.session_cfg["spacing"],
+            translate=self.session_cfg["origin"],
+            rotate=self.session_cfg["direction"],
+            metadata=self.session_cfg["metadata"],
+        )
+        _layer_res._source = self.session_cfg["source"]
+
+        self._viewer.add_layer(_layer_res)
+
+    def init_with_mask(self):
+        _layer_data = self._viewer.layers[self.label_for_init.currentText()].data
+
+        assert (
+            _layer_data.shape == self.session_cfg["shape"]
+        )  # Labels and Image should have same shape
+
+        self._data_result = (_layer_data == self.class_for_init.value()).astype(np.uint8)
+        self.session.set_target_buffer(self._data_result)
+        self._viewer.layers[self.label_layer_name].data = self._data_result
 
     # Event Handlers
     def on_init(self, *args, **kwargs) -> None:

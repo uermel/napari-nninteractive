@@ -63,8 +63,8 @@ class BaseGUI(QWidget):
         _main_layout.addWidget(self._init_run_button())  # Run Button
         _main_layout.addWidget(self._init_export_button())  # Run Button
 
-        spacer = QSpacerItem(20, 40, QSizePolicy.Minimum)  # , QSizePolicy.Expanding)
-        _main_layout.addItem(spacer)
+        # spacer = QSpacerItem(20, 40, QSizePolicy.Minimum)  # , QSizePolicy.Expanding)
+        # _main_layout.addItem(spacer)
 
         _main_layout.addWidget(self._init_acknowledgements())  # Acknowledgements
 
@@ -88,6 +88,7 @@ class BaseGUI(QWidget):
         self.run_ckbx.setEnabled(False)
         self.export_button.setEnabled(False)
         self.reset_interaction_button.setEnabled(False)
+        self.empty_mask_btn.setEnabled(False)
         self.load_mask_btn.setEnabled(False)
         self.add_button.setEnabled(False)
         self.add_ckbx.setEnabled(False)
@@ -103,6 +104,7 @@ class BaseGUI(QWidget):
         self.run_ckbx.setEnabled(True)
         self.export_button.setEnabled(True)
         self.reset_interaction_button.setEnabled(True)
+        self.empty_mask_btn.setEnabled(True)
         self.load_mask_btn.setEnabled(True)
         self.add_button.setEnabled(True)
         self.add_ckbx.setEnabled(True)
@@ -209,6 +211,11 @@ class BaseGUI(QWidget):
         h_layout.setStretch(1, 2)
         h_layout.setStretch(2, 1)
         _layout.addLayout(h_layout)
+
+        self.empty_mask_btn = setup_button(
+            _layout, "Create Empty Layer", function=self.add_mask_init_layer
+        )
+        setup_icon(self.empty_mask_btn, "paint", theme=self._viewer.theme)
 
         self.load_mask_btn = setup_button(_layout, "Initialize with Mask", self.on_load_mask)
         setup_icon(self.load_mask_btn, "logo_silhouette", theme=self._viewer.theme)
@@ -406,6 +413,9 @@ class BaseGUI(QWidget):
         print("on_propergate_ckbx", *args, **kwargs)
 
     def on_load_mask(self):
+        pass
+
+    def add_mask_init_layer(self):
         pass
 
     def _export(self) -> None:
