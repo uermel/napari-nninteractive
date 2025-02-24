@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 import numpy as np
+from huggingface_hub import login, snapshot_download
 from napari._qt.layer_controls.qt_layer_controls_container import layer_to_controls
 from napari.layers import Labels
 from napari.layers.base._base_constants import ActionType
@@ -215,6 +216,24 @@ class LayerControls(BaseGUI):
         # Get all model and image from the GUI
         image_name = self.image_selection.currentText()
         model_name = self.model_selection.currentText()
+        model_name_local = self.model_selection_local.text()
+
+        if model_name_local != "" and Path(model_name_local).exists():
+            # Use Local Checkpoint
+            model_name = Path(model_name_local).name
+            self.checkpoint_path = model_name_local
+        else:
+            # Download Checkpoint
+            # TODO remove Token when having puplic checkpoints
+            login(token="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")  # Only because private Repository
+            repo_id = "kraemer/nnInteractive"
+            force_download = False
+            download_path = snapshot_download(
+                repo_id=repo_id, allow_patterns=[f"{model_name}/*"], force_download=force_download
+            )
+            self.checkpoint_path = Path(download_path).joinpath(model_name)
+        print(f"Using Model {model_name} at : {self.checkpoint_path}")
+
         # self.label_layer_name = f"nnInteractive - Label Layer - {image_name} - {model_name}"
 
         # Get everything we need from the image layer

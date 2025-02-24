@@ -30,7 +30,8 @@ dependencies = [
     "qtpy",
     "scikit-image",
     "napari[all]",
-    "napari-nifti"
+    "napari-nifti",
+    "huggingface_hub",
 ]
 
 [project.optional-dependencies]

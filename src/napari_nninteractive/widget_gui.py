@@ -1,11 +1,8 @@
 import importlib.resources
-import warnings
-from pathlib import Path
 from typing import Optional
 
 from napari.layers import Image, Labels
 from napari.viewer import Viewer
-from nnunetv2.paths import nnUNet_results
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QKeySequence, QPixmap
 from qtpy.QtWidgets import (
@@ -24,11 +21,12 @@ from napari_nninteractive.napari_utils.icon_factory import setup_icon
 from napari_nninteractive.napari_utils.widget_factory import (
     setup_button,
     setup_checkbox,
+    setup_combobox,
     setup_hswitch,
     setup_layerselection,
+    setup_lineedit,
     setup_spinbox,
     setup_text,
-    setup_tooltipcombobox,
     setup_vswitch,
 )
 from napari_nninteractive.napari_utils.widgets.collabsable_groubox import QCollabsableGroupBox
@@ -45,7 +43,7 @@ class BaseGUI(QWidget):
 
     def __init__(self, viewer: Viewer, parent: Optional[QWidget] = None):
         super().__init__(parent)
-        self._width = 300
+        self._width = 275
         self.setMinimumWidth(self._width)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self._viewer = viewer
@@ -55,6 +53,7 @@ class BaseGUI(QWidget):
         self.setLayout(_main_layout)
 
         _main_layout.addWidget(self._init_model_selection())  # Model Selection
+        # _main_layout.addWidget(self._init_model_selection_v2())  # Model Selection
         _main_layout.addWidget(self._init_image_selection())  # Image Selection
         _main_layout.addWidget(self._init_control_buttons())  # Init and Reset Button
         _main_layout.addWidget(self._init_init_buttons())  # Init and Reset Button
@@ -88,7 +87,7 @@ class BaseGUI(QWidget):
         self.run_ckbx.setEnabled(False)
         self.export_button.setEnabled(False)
         self.reset_interaction_button.setEnabled(False)
-        self.empty_mask_btn.setEnabled(False)
+        # self.empty_mask_btn.setEnabled(False)
         self.load_mask_btn.setEnabled(False)
         self.add_button.setEnabled(False)
         self.add_ckbx.setEnabled(False)
@@ -104,7 +103,7 @@ class BaseGUI(QWidget):
         self.run_ckbx.setEnabled(True)
         self.export_button.setEnabled(True)
         self.reset_interaction_button.setEnabled(True)
-        self.empty_mask_btn.setEnabled(True)
+        # self.empty_mask_btn.setEnabled(True)
         self.load_mask_btn.setEnabled(True)
         self.add_button.setEnabled(True)
         self.add_ckbx.setEnabled(True)
@@ -118,25 +117,29 @@ class BaseGUI(QWidget):
     def _clear_layers(self):
         """Abstract function to clear all needed layers"""
 
-    # Init Methods
     def _init_model_selection(self) -> QGroupBox:
         """Initializes the model selection as a combo box."""
         _group_box = QGroupBox("Model Selection:")
         _layout = QVBoxLayout()
+        model_options = ["nnInteractiveInferenceSessionV3"]
 
-        self.nnUNet_results = nnUNet_results
-        self.nnUNet_dataset = "Dataset224_nnInteractive"
-
-        _dir = Path(self.nnUNet_results).joinpath(self.nnUNet_dataset)
-        _folders = [str(f.name) for f in _dir.iterdir() if f.is_dir()] if _dir.is_dir() else []
-        if _folders == []:
-            warnings.warn(
-                f"No nnInteractive checkpoints {self.nnUNet_dataset} found in your nnUNet_results folder {self.nnUNet_results}. Add some and restart the plugin",
-                UserWarning,
-                stacklevel=2,
-            )
-        self.model_selection = setup_tooltipcombobox(_layout, _folders, self.on_model_selected)
+        self.model_selection = setup_combobox(
+            _layout, options=model_options, function=self.on_model_selected
+        )
         self.model_selection.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
+
+        _boxlayout = QHBoxLayout()
+        _layout.addLayout(_boxlayout)
+        self.model_selection_local = setup_lineedit(
+            _boxlayout, placeholder="Use Local Checkpoint...", function=self.on_model_selected
+        )
+
+        def _reset_local_ckpt_lineedit():
+            self.model_selection_local.setText("")
+            self.on_model_selected()
+
+        btn = setup_button(_boxlayout, "", function=_reset_local_ckpt_lineedit)
+        setup_icon(btn, "delete_shape", theme=self._viewer.theme)
 
         self.bg_preprocessing_ckbx = setup_checkbox(
             _layout,
@@ -147,6 +150,36 @@ class BaseGUI(QWidget):
 
         _group_box.setLayout(_layout)
         return _group_box
+
+    # Init Methods - Old Version
+    # def _init_model_selection(self) -> QGroupBox:
+    #     """Initializes the model selection as a combo box."""
+    #     _group_box = QGroupBox("Model Selection:")
+    #     _layout = QVBoxLayout()
+    #
+    #     self.nnUNet_results = nnUNet_results
+    #     self.nnUNet_dataset = "Dataset224_nnInteractive"
+    #
+    #     _dir = Path(self.nnUNet_results).joinpath(self.nnUNet_dataset)
+    #     _folders = [str(f.name) for f in _dir.iterdir() if f.is_dir()] if _dir.is_dir() else []
+    #     if _folders == []:
+    #         warnings.warn(
+    #             f"No nnInteractive checkpoints {self.nnUNet_dataset} found in your nnUNet_results folder {self.nnUNet_results}. Add some and restart the plugin",
+    #             UserWarning,
+    #             stacklevel=2,
+    #         )
+    #     self.model_selection = setup_tooltipcombobox(_layout, _folders, self.on_model_selected)
+    #     self.model_selection.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
+    #
+    #     self.bg_preprocessing_ckbx = setup_checkbox(
+    #         _layout,
+    #         "Background Preprocessing",
+    #         True,
+    #         tooltips="Use background preprocessing for nnInteractive session",
+    #     )
+    #
+    #     _group_box.setLayout(_layout)
+    #     return _group_box
 
     def _init_image_selection(self) -> QGroupBox:
         """Initializes the image selection combo box in a group box."""
@@ -212,10 +245,10 @@ class BaseGUI(QWidget):
         h_layout.setStretch(2, 1)
         _layout.addLayout(h_layout)
 
-        self.empty_mask_btn = setup_button(
-            _layout, "Create Empty Layer", function=self.add_mask_init_layer
-        )
-        setup_icon(self.empty_mask_btn, "paint", theme=self._viewer.theme)
+        # self.empty_mask_btn = setup_button(
+        #     _layout, "Create Empty Layer", function=self.add_mask_init_layer
+        # )
+        # setup_icon(self.empty_mask_btn, "paint", theme=self._viewer.theme)
 
         self.load_mask_btn = setup_button(_layout, "Initialize with Mask", self.on_load_mask)
         setup_icon(self.load_mask_btn, "logo_silhouette", theme=self._viewer.theme)
@@ -277,7 +310,7 @@ class BaseGUI(QWidget):
 
         self.propagate_ckbx = setup_checkbox(
             _layout,
-            "Propagate predictions",
+            "Auto-zoom",
             True,
             function=self.on_propagate_ckbx,
         )

@@ -8,6 +8,7 @@ from qtpy.QtWidgets import (
     QComboBox,
     QLabel,
     QLayout,
+    QLineEdit,
     QPushButton,
     QShortcut,
     QSpinBox,
@@ -324,5 +325,48 @@ def setup_checkbox(
         widget_event=_widget.stateChanged,
         function=function,
         shortcut=shortcut,
+        tooltips=tooltips,
+    )
+
+
+def setup_lineedit(
+    layout: QLayout,
+    text: Optional[str] = None,
+    placeholder: Optional[str] = None,
+    function: Optional[Callable] = None,
+    readonly: bool = False,
+    tooltips: Optional[str] = None,
+    stretch: int = 1,
+) -> QWidget:
+    """Create a QLineEdit, configure it, and add it to a layout.
+
+    This function creates a `QLineEdit` widget, sets its text, placeholder,
+    and read-only status if provided. It connects an optional callback function
+    to the `returnPressed` signal and adds the widget to the specified layout.
+
+    Args:
+        layout (QLayout): The layout to which the QLineEdit will be added.
+        text (Optional[str], optional): The initial text to display in the QLineEdit. Defaults to None.
+        placeholder (Optional[str], optional): Placeholder text for the QLineEdit. Defaults to None.
+        function (Optional[Callable], optional): A callback function to execute when the `returnPressed` signal is triggered. Defaults to None.
+        readonly (bool, optional): If True, makes the QLineEdit read-only. Defaults to False.
+        tooltips (Optional[str], optional): Tooltip text to display when hovering over the QLineEdit. Defaults to None.
+        stretch (int, optional): The stretch factor for the QLineEdit in the layout. Defaults to 1.
+
+    Returns:
+        QWidget: The QLineEdit widget added to the layout.
+    """
+    _widget = QLineEdit()
+    _widget.setReadOnly(readonly)
+    if text is not None:
+        _widget.setText(text)
+    if placeholder is not None:
+        _widget.setPlaceholderText(placeholder)
+    return _connect_widget(
+        layout,
+        _widget,
+        widget_event=_widget.returnPressed,
+        function=function,
+        shortcut=None,
         tooltips=tooltips,
     )
