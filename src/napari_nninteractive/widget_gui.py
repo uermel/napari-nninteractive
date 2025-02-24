@@ -121,7 +121,7 @@ class BaseGUI(QWidget):
         """Initializes the model selection as a combo box."""
         _group_box = QGroupBox("Model Selection:")
         _layout = QVBoxLayout()
-        model_options = ["nnInteractiveInferenceSessionV3"]
+        model_options = ["nnInteractive_v0.0"]
 
         self.model_selection = setup_combobox(
             _layout, options=model_options, function=self.on_model_selected
