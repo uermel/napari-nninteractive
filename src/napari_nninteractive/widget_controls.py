@@ -8,6 +8,7 @@ from napari._qt.layer_controls.qt_layer_controls_container import layer_to_contr
 from napari.layers import Labels
 from napari.layers.base._base_constants import ActionType
 from napari.utils.notifications import show_warning
+from napari.utils.transforms import Affine
 from napari.viewer import Viewer
 from qtpy.QtWidgets import QFileDialog, QWidget
 
@@ -71,10 +72,10 @@ class LayerControls(BaseGUI):
         point_layer = SinglePointLayer(
             name=self.point_layer_name,
             ndim=self.session_cfg["ndim"],
-            # affine=self.session_cfg["affine"],
-            scale=self.session_cfg["spacing"],
-            translate=self.session_cfg["origin"],
-            rotate=self.session_cfg["direction"],
+            affine=self.session_cfg["affine"],
+            # scale=self.session_cfg["spacing"],
+            # translate=self.session_cfg["origin"],
+            # rotate=self.session_cfg["direction"],
             metadata=self.session_cfg["metadata"],
             opacity=0.7,
             size=5,
@@ -90,10 +91,10 @@ class LayerControls(BaseGUI):
         bbox_layer = BBoxLayer(
             name=self.bbox_layer_name,
             ndim=self.session_cfg["ndim"],
-            # affine=self.session_cfg["affine"],
-            scale=self.session_cfg["spacing"],
-            translate=self.session_cfg["origin"],
-            rotate=self.session_cfg["direction"],
+            affine=self.session_cfg["affine"],
+            # scale=self.session_cfg["spacing"],
+            # translate=self.session_cfg["origin"],
+            # rotate=self.session_cfg["direction"],
             metadata=self.session_cfg["metadata"],
             prompt_index=self.prompt_button.index,
             opacity=0.3,
@@ -107,10 +108,10 @@ class LayerControls(BaseGUI):
         scribble_layer = ScibbleLayer(
             data=_data,
             name=self.scribble_layer_name,
-            # affine=self.session_cfg["affine"],
-            scale=self.session_cfg["spacing"],
-            translate=self.session_cfg["origin"],
-            rotate=self.session_cfg["direction"],
+            affine=self.session_cfg["affine"],
+            # scale=self.session_cfg["spacing"],
+            # translate=self.session_cfg["origin"],
+            # rotate=self.session_cfg["direction"],
             metadata=self.session_cfg["metadata"],
             prompt_index=self.prompt_button.index,
         )
@@ -126,10 +127,10 @@ class LayerControls(BaseGUI):
             shape=self.session_cfg["shape"],
             name=self.lasso_layer_name,
             ndim=self.session_cfg["ndim"],
-            # affine=self.session_cfg["affine"],
-            scale=self.session_cfg["spacing"],
-            translate=self.session_cfg["origin"],
-            rotate=self.session_cfg["direction"],
+            affine=self.session_cfg["affine"],
+            # scale=self.session_cfg["spacing"],
+            # translate=self.session_cfg["origin"],
+            # rotate=self.session_cfg["direction"],
             metadata=self.session_cfg["metadata"],
             prompt_index=self.prompt_button.index,
             opacity=0.3,
@@ -161,10 +162,10 @@ class LayerControls(BaseGUI):
             self._data_result,
             name=self.label_layer_name,
             opacity=0.3,
-            # affine=self.session_cfg["affine"],
-            scale=self.session_cfg["spacing"],
-            translate=self.session_cfg["origin"],
-            rotate=self.session_cfg["direction"],
+            affine=self.session_cfg["affine"],
+            # scale=self.session_cfg["spacing"],
+            # translate=self.session_cfg["origin"],
+            # rotate=self.session_cfg["direction"],
             colormap=self.colormap[_index],
             metadata=self.session_cfg["metadata"],
         )
@@ -172,27 +173,27 @@ class LayerControls(BaseGUI):
 
         self._viewer.add_layer(_layer_res)
 
-    def add_mask_init_layer(self) -> None:
-        """
-        Check if a layer with the layer_name already exists. If yes rename this by adding an index
-        and afterward create the layer
-        :return:
-        :rtype:
-        """
-
-        _layer_res = Labels(
-            np.zeros_like(self._data_result),
-            name=self.mask_init_layer_name,
-            opacity=0.3,
-            # affine=self.session_cfg["affine"],
-            scale=self.session_cfg["spacing"],
-            translate=self.session_cfg["origin"],
-            rotate=self.session_cfg["direction"],
-            metadata=self.session_cfg["metadata"],
-        )
-        _layer_res._source = self.session_cfg["source"]
-
-        self._viewer.add_layer(_layer_res)
+    # def add_mask_init_layer(self) -> None:
+    #     """
+    #     Check if a layer with the layer_name already exists. If yes rename this by adding an index
+    #     and afterward create the layer
+    #     :return:
+    #     :rtype:
+    #     """
+    #
+    #     _layer_res = Labels(
+    #         np.zeros_like(self._data_result),
+    #         name=self.mask_init_layer_name,
+    #         opacity=0.3,
+    #         affine=self.session_cfg["affine"],
+    #         # scale=self.session_cfg["spacing"],
+    #         # translate=self.session_cfg["origin"],
+    #         # rotate=self.session_cfg["direction"],
+    #         metadata=self.session_cfg["metadata"],
+    #     )
+    #     _layer_res._source = self.session_cfg["source"]
+    #
+    #     self._viewer.add_layer(_layer_res)
 
     def init_with_mask(self):
         _layer_data = self._viewer.layers[self.label_for_init.currentText()].data
@@ -213,11 +214,11 @@ class LayerControls(BaseGUI):
         Retrieves the selected model and image names from the GUI, extracts relevant data from the
         image layer, and creates a corresponding label layer in the viewer.
         """
+        # --- MODEL HANDLING --- #
         # Get all model and image from the GUI
         image_name = self.image_selection.currentText()
         model_name = self.model_selection.currentText()
         model_name_local = self.model_selection_local.text()
-
         if model_name_local != "" and Path(model_name_local).exists():
             # Use Local Checkpoint
             model_name = Path(model_name_local).name
@@ -234,43 +235,43 @@ class LayerControls(BaseGUI):
             self.checkpoint_path = Path(download_path).joinpath(model_name)
         print(f"Using Model {model_name} at : {self.checkpoint_path}")
 
-        # self.label_layer_name = f"nnInteractive - Label Layer - {image_name} - {model_name}"
-
+        # --- DATA HANDLING --- #
         # Get everything we need from the image layer
         image_layer = self._viewer.layers[image_name]
 
+        _ndim_source = image_layer.ndim
+        _affine_source = image_layer.affine
+
         _ndim = image_layer.ndim
         _shape = image_layer.data.shape
-
         _affine = image_layer.affine
-        _spacing = image_layer.metadata.get("spacing", np.ones(_ndim))
-        _origin = image_layer.metadata.get("origin", np.zeros(_ndim))
-        _direction = image_layer.metadata.get("direction", np.eye(_ndim))
+        _spacing = image_layer.scale
 
-        if not image_layer._slice_input.is_orthogonal(image_layer.affine):
-            _direction = np.eye(_ndim)
-            # _origin = np.zeros(_ndim)
-            # _spacing = np.ones(_ndim)
+        # 1. Check and Correct Non Orthogonal Data
+        if not image_layer._slice_input.is_orthogonal(_affine):
+            _origin = _affine.translate
+            # we ignore directtion and shear
+            _affine = Affine(scale=_spacing, translate=_origin)
             show_warning(
                 "Your data is non-orthogonal. This is not supported by napari. "
                 "To fix this the direction is ignored during visualizing which changes the appearance (only visual) of your data. "
             )
+            _step = self._viewer.dims.current_step
+            image_layer.affine = _affine
+            self._viewer.dims.current_step = _step
 
-        _step = self._viewer.dims.current_step
-        image_layer.affine = None
-        image_layer.scale = _spacing
-        image_layer.translate = _origin
-        image_layer.rotate = _direction
-        self._viewer.dims.current_step = _step
-
-        # Make 2d Data to 3d by adding a dummy dim
+        # 2. Convert 2D to dummy 3D data
         if _ndim == 2:
             _ndim = 3
             _shape = np.insert(_shape, 0, 1)
+
             _spacing = np.insert(_spacing, 0, 1)
-            _temp = np.eye(_ndim)
-            _temp[:2, :2] = _direction
-            _direction = _temp
+            _origin = np.insert(_affine.translate, 0, 0)
+            _direction = np.eye(_ndim)
+            _direction[-2:, -2:] = _affine.rotate
+            _shear = np.insert(_affine.shear, 0, 0)
+
+            _affine = Affine(scale=_spacing, translate=_origin, rotate=_direction, shear=_shear)
 
         self.session_cfg = {
             "name": image_name,
@@ -279,14 +280,11 @@ class LayerControls(BaseGUI):
             "ndim_source": image_layer.ndim,
             "shape": _shape,
             "affine": _affine,
-            # "affine_source": image_layer.affine,
+            "affine_source": _affine_source,
             "spacing": _spacing,
-            "origin": _origin,
-            "direction": _direction,
             "source": image_layer.source,
             "metadata": image_layer.metadata,
         }
-        # print(self.session_cfg)
         # Create the target label array and layer
         self._data_result = np.zeros(self.session_cfg["shape"], dtype=np.uint8)
 
@@ -356,26 +354,6 @@ class LayerControls(BaseGUI):
             self.session._predict()
             self._viewer.layers[self.label_layer_name].refresh()
 
-    # def on_run(self, *args, **kwargs) -> None:
-    #     """
-    #     Executes the run method of the selected layer and triggers inference if data is obtained.
-    #
-    #     Args:
-    #         *args: Additional arguments for the run method.
-    #         **kwargs: Additional keyword arguments for the run method.
-    #     """
-    #     _index = self.interaction_button.index
-    #     _layer_name = self.layer_dict.get(_index)
-    #     if (
-    #         _layer_name is not None
-    #         and _layer_name in self._viewer.layers
-    #         and not self._viewer.layers[_layer_name].is_free()
-    #     ):
-    #         _data = self._viewer.layers[_layer_name].get_last()
-    #
-    #         self._viewer.layers[_layer_name].run()
-    #         self.inference(_data, _index)
-
     def on_interaction(self, event: Any):
         if (
             self.add_ckbx.isChecked()
@@ -385,37 +363,6 @@ class LayerControls(BaseGUI):
             self._viewer.layers[event.source.name].refresh()
 
             self.add_interaction()
-
-    # def add_interaction(self):
-    #     _index = self.interaction_button.index
-    #     _layer_name = self.layer_dict.get(_index)
-    #     if (
-    #             _layer_name is not None
-    #             and _layer_name in self._viewer.layers
-    #             and not self._viewer.layers[_layer_name].is_free()
-    #     ):
-    #         _data = self._viewer.layers[_layer_name].get_last()
-    #
-    #         self._viewer.layers[_layer_name].run()
-    #         self.inference(_data, _index)
-
-    # def on_auto_run(self, event: Any) -> None:
-    #     """
-    #     Automatically run an action if the checkbox is checked and data is added.
-    #
-    #     Args:
-    #         event (Any): The event triggering the auto-run, with information about
-    #             the layer action and data.
-    #     """
-    #     print("daaaaaa")
-    #     if (
-    #         self.run_ckbx.isChecked()
-    #         and event.action == ActionType.ADDED
-    #         and not self._viewer.layers[event.source.name].is_free()
-    #     ):
-    #         self._viewer.layers[event.source.name].refresh()
-    #
-    #         self.on_run()
 
     def on_layer_selected(self, *args, **kwargs) -> None:
         """
@@ -472,47 +419,43 @@ class LayerControls(BaseGUI):
             return
 
         elif Path(_output_dir).is_dir():
-            _output_dir = Path(_output_dir).joinpath(f"{_output_file}_{self.session_cfg['model']}")
+            _output_dir = Path(_output_dir).joinpath(f"{_output_file}_nnInteractive")
             Path(_output_dir).mkdir(exist_ok=True)
 
             for _layer in self._viewer.layers:
-                if self.label_layer_name in _layer.name:
-                    if self.label_layer_name == _layer.name:
-                        _index = determine_layer_index(
-                            names=[
-                                layer.name
-                                for layer in self._viewer.layers
-                                if isinstance(layer, Labels)
-                            ],
-                            prefix="object ",
-                            postfix=f" - {self.session_cfg['name']}",
+                if self.label_layer_name == _layer.name:
+                    _index = determine_layer_index(
+                        names=[
+                            layer.name for layer in self._viewer.layers if isinstance(layer, Labels)
+                        ],
+                        prefix="object ",
+                        postfix=f" - {self.session_cfg['name']}",
+                    )
+                elif _layer.name.startswith("object ") and _layer.name.endswith(
+                    f" - {self.session_cfg['name']}"
+                ):
+                    _index = int(
+                        _layer.name.replace("object ", "").replace(
+                            f" - {self.session_cfg['name']}", ""
                         )
+                    )
+                else:
+                    continue
 
-                    else:
-                        _index = int(
-                            _layer.name.replace("object ", "").replace(
-                                f" - {self.session_cfg['name']}", ""
-                            )
-                        )
+                _file_name = f"{_output_file}_{str(_index).zfill(4)}{_dtype}"
+                _file = str(Path(_output_dir).joinpath(_file_name))
 
-                    _file_name = f"{_output_file}_{str(_index).zfill(4)}{_dtype}"
-                    _file = str(Path(_output_dir).joinpath(_file_name))
-                    if self.session_cfg["ndim_source"] == 2:
-                        # For 2d data we need to create a temporal layer removing the dummy third
-                        # dimension and export the data in the correct way.
-                        _d = _layer.data[0]
+                # reverse the corrections for non-orthogonal data and convert dummy 3d back to 2d
+                _data = _layer.data[0] if self.session_cfg["ndim_source"] == 2 else _layer.data
+                _layer_temp = Labels(
+                    _data,
+                    name="_temp",
+                    affine=self.session_cfg["affine_source"],
+                    metadata=self.session_cfg["metadata"],
+                )
 
-                        _layer_temp = Labels(
-                            _d,
-                            name="Temp",
-                            affine=self.session_cfg["affine"],
-                            colormap=self.colormap[_index],
-                            metadata=self.session_cfg["metadata"],
-                        )
-                        _layer_temp._source = self.session_cfg["source"]
-                        _layer_temp.save(_file)
-                        del _layer_temp
-                    else:
-                        _layer.save(_file)
+                _layer_temp._source = self.session_cfg["source"]
+                _layer_temp.save(_file)
+                del _layer_temp
         else:
             raise ValueError("Output path has to be a directory, not a file")
