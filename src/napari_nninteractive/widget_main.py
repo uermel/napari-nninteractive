@@ -41,17 +41,15 @@ class nnInteractiveWidget(LayerControls):
         """
         super().on_init(*args, **kwargs)
         if self.session is None:
-            _cktp = Path(self.nnUNet_results).joinpath(
-                self.nnUNet_dataset, self.model_selection.currentText()
-            )
-
             # Get inference class from Checkpoint
-            if Path(_cktp).joinpath("inference_session_class.json").is_file():
-                inference_class = load_json(Path(_cktp).joinpath("inference_session_class.json"))
+            if Path(self.checkpoint_path).joinpath("inference_session_class.json").is_file():
+                inference_class = load_json(
+                    Path(self.checkpoint_path).joinpath("inference_session_class.json")
+                )
                 if isinstance(inference_class, dict):
                     inference_class = inference_class["inference_class"]
             else:
-                inference_class = "nnInteractiveInferenceSessionV2"
+                inference_class = "nnInteractiveInferenceSessionV3"
 
             inference_class = recursive_find_python_class(
                 join(nnunetv2.__path__[0], "inference", "nnInteractive"),
@@ -70,8 +68,8 @@ class nnInteractiveWidget(LayerControls):
             )
 
             self.session.initialize_from_trained_model_folder(
-                _cktp,
-                5,
+                self.checkpoint_path,
+                0,
                 "checkpoint_final.pth",
             )
 
@@ -90,12 +88,6 @@ class nnInteractiveWidget(LayerControls):
         # Set the prompt type to positive
         self.prompt_button._uncheck()
         self.prompt_button._check(0)
-
-        # if (
-        #     self.use_init_ckbx.isChecked()
-        #     and self.label_for_init.currentText() in self._viewer.layers
-        # ):
-        #     self.init_with_mask()
 
     def on_model_selected(self):
         """Reset the current session completely"""
