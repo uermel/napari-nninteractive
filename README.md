@@ -12,37 +12,26 @@ https://napari.org/stable/plugins/index.html
 
 ## Installation
 
-##### 1. Use this python version:
+##### 1. Create a virtual environment:
+Conda or pip is fine, we provide an example for conda
 
 ```
 conda create -n nnInteractive python=3.12
 conda activate nnInteractive
 ```
 
-##### 2. Install nnUNet (+Set the Paths) (branch project/nnInteractive)
-
+##### 2. Install nnInteractive
+This needs to be updated with the correct URL once released
 ```
-pip install git+https://github.com/MIC-DKFZ/batchgeneratorsv2.git
-git clone git@git.dkfz.de:mic/internal/nnu-net.git
-cd nnu-net
-git checkout project/nnInteractive
-pip install -e ./
+git clone git@git.dkfz.de:mic/personal/group8/nninteractive_inference.git
+pip install -e nninteractive_inference/
 ```
 
-##### 3. Install some more stuff require for nnInteractive
-
-```
-pip install git+https://github.com/FabianIsensee/BatchViewer.git
-pip install git+https://github.com/dalcalab/voxynth.git
-```
-
-##### 4. Install this repository + dependencies via
+##### 3. Install this repository + dependencies via
 
 ```
 pip install -e ./
 ```
-
-##### 5. Place nnInteractive Checkpoints ("Dataset224_nnInteractive") in your nnUNet_results folder
 
 ______________________________________________________________________
 
