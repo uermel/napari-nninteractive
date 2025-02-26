@@ -2,7 +2,7 @@ import warnings
 from pathlib import Path
 from typing import Any, Optional
 
-import nnunetv2
+import nnInteractive
 import numpy as np
 import torch
 from batchgenerators.utilities.file_and_folder_operations import join, load_json
@@ -52,9 +52,9 @@ class nnInteractiveWidget(LayerControls):
                 inference_class = "nnInteractiveInferenceSessionV3"
 
             inference_class = recursive_find_python_class(
-                join(nnunetv2.__path__[0], "inference", "nnInteractive"),
+                join(nnInteractive.__path__[0], "inference"),
                 inference_class,
-                "nnunetv2.inference.nnInteractive",
+                "nnInteractive.inference",
             )
 
             # Initialize the Session

@@ -32,6 +32,7 @@ dependencies = [
     "napari[all]",
     "napari-nifti",
     "huggingface_hub",
+    "nnInteractive>=1.0.0"
 ]
 
 [project.optional-dependencies]
