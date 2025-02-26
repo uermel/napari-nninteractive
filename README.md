@@ -13,7 +13,7 @@ https://napari.org/stable/plugins/index.html
 ## Installation
 
 ##### 1. Create a virtual environment:
-Conda or pip is fine, we provide an example for conda
+Conda or pip is fine, we provide an example for conda. Python 3.10 and higher are supported
 
 ```
 conda create -n nnInteractive python=3.12
