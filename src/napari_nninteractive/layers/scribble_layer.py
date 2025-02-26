@@ -1,3 +1,4 @@
+import numpy as np
 from napari.layers import Labels
 from napari.layers.base._base_constants import ActionType
 
@@ -89,4 +90,4 @@ class ScibbleLayer(BaseLayerClass, Labels):
         Returns:
             np.ndarray: A binary array where 1 indicates the last scribble interaction.
         """
-        return (self.data == 1).astype(int)
+        return (self.data == 1).astype(np.uint8)

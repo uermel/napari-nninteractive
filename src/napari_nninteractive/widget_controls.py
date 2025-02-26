@@ -393,7 +393,6 @@ class LayerControls(BaseGUI):
             _data: The data obtained from the layer's run method.
             _index (int): The index of the layer type, corresponding to the layer_dict key.
         """
-        # print(data.shape)
         print(
             f"Inference for interaction {index} and prompt {self.prompt_button.index == 0} and valid data {data is not None} "
         )

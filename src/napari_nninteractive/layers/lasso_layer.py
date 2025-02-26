@@ -150,7 +150,6 @@ class LassoLayer(BaseLayerClass, Shapes):
             polygon_2d = polygon.data
 
         slice_shape = np.delete(labels_shape, dim_not_displayed)
-        # slice_shape = [labels_shape[i] for i in range(len(labels_shape)) if i != dim_not_displayed]
 
         transformed_shape = napari.layers.shapes._shapes_models.polygon.Polygon(polygon_2d)
         mask_slice = transformed_shape.to_mask(slice_shape, zoom_factor=1, offset=(0, 0)).astype(
@@ -158,7 +157,7 @@ class LassoLayer(BaseLayerClass, Shapes):
         )
         mask = np.zeros(labels_shape, dtype=np.uint8)
 
-        mask = np.insert(mask, slice_id, mask_slice, axis=dim_not_displayed)
+        mask[(slice(None),) * dim_not_displayed + (slice_id,)] = mask_slice
 
         return mask
 
