@@ -12,6 +12,9 @@ https://napari.org/stable/plugins/index.html
 
 ## Installation
 
+### Prerequisites
+You need a Linux computer with a Nvidia GPU. At least 10-11GB of VRAM.
+
 ##### 1. Create a virtual environment:
 Conda or pip is fine, we provide an example for conda. Python 3.10 and higher are supported
 
