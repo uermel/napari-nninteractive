@@ -13,9 +13,11 @@ https://napari.org/stable/plugins/index.html
 ## Installation
 
 ### Prerequisites
+
 You need a Linux computer with a Nvidia GPU. At least 10-11GB of VRAM.
 
 ##### 1. Create a virtual environment:
+
 Conda or pip is fine, we provide an example for conda. Python 3.10 and higher are supported
 
 ```
@@ -24,20 +26,25 @@ conda activate nnInteractive
 ```
 
 ##### 2. Install the correct PyTorch for your system
-Go to the [PyTorch homepage](https://pytorch.org/get-started/locally/) and pick the right configuration. 
+
+Go to the [PyTorch homepage](https://pytorch.org/get-started/locally/) and pick the right configuration.
 Note that since recently PyTorch needs to be installed via pip. This is fine to do within your conda environment.
 
 For Ubuntu with a Nvidia GPU, pick 'stable', 'Linux', 'Pip', 'Python', 'CUDA12.6':
+
 ```
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 ```
 
 ##### 3. Install nnInteractive
+
 This needs to be updated once released
+
 ```
 git clone git@git.dkfz.de:mic/personal/group8/nninteractive_inference.git
 pip install -e nninteractive_inference/
 ```
+
 (this will be a pypi package so this will be `pip install nninteractive` in the future)
 
 ##### 3. Install this repository + dependencies via
@@ -45,6 +52,7 @@ pip install -e nninteractive_inference/
 ```
 pip install -e ./
 ```
+
 (ideally this will also just be a pypi package)
 
 ______________________________________________________________________

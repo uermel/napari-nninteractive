@@ -173,27 +173,27 @@ class LayerControls(BaseGUI):
 
         self._viewer.add_layer(_layer_res)
 
-    # def add_mask_init_layer(self) -> None:
-    #     """
-    #     Check if a layer with the layer_name already exists. If yes rename this by adding an index
-    #     and afterward create the layer
-    #     :return:
-    #     :rtype:
-    #     """
-    #
-    #     _layer_res = Labels(
-    #         np.zeros_like(self._data_result),
-    #         name=self.mask_init_layer_name,
-    #         opacity=0.3,
-    #         affine=self.session_cfg["affine"],
-    #         # scale=self.session_cfg["spacing"],
-    #         # translate=self.session_cfg["origin"],
-    #         # rotate=self.session_cfg["direction"],
-    #         metadata=self.session_cfg["metadata"],
-    #     )
-    #     _layer_res._source = self.session_cfg["source"]
-    #
-    #     self._viewer.add_layer(_layer_res)
+    def add_mask_init_layer(self) -> None:
+        """
+        Check if a layer with the layer_name already exists. If yes rename this by adding an index
+        and afterward create the layer
+        :return:
+        :rtype:
+        """
+
+        _layer_res = Labels(
+            np.zeros_like(self._data_result),
+            name=self.mask_init_layer_name,
+            opacity=0.3,
+            affine=self.session_cfg["affine"],
+            # scale=self.session_cfg["spacing"],
+            # translate=self.session_cfg["origin"],
+            # rotate=self.session_cfg["direction"],
+            metadata=self.session_cfg["metadata"],
+        )
+        _layer_res._source = self.session_cfg["source"]
+
+        self._viewer.add_layer(_layer_res)
 
     def init_with_mask(self):
         _layer_data = self._viewer.layers[self.label_for_init.currentText()].data
@@ -217,6 +217,10 @@ class LayerControls(BaseGUI):
         # --- MODEL HANDLING --- #
         # Get all model and image from the GUI
         image_name = self.image_selection.currentText()
+
+        if image_name == "":
+            raise ValueError("No Image Layer selected")
+
         model_name = self.model_selection.currentText()
         model_name_local = self.model_selection_local.text()
         if model_name_local != "" and Path(model_name_local).exists():

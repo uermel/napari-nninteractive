@@ -10,6 +10,7 @@ from qtpy.QtWidgets import (
     QGroupBox,
     QHBoxLayout,
     QLabel,
+    QScrollArea,
     QShortcut,
     QSizePolicy,
     QSpacerItem,
@@ -52,20 +53,28 @@ class BaseGUI(QWidget):
         _main_layout = QVBoxLayout()
         self.setLayout(_main_layout)
 
-        _main_layout.addWidget(self._init_model_selection())  # Model Selection
-        # _main_layout.addWidget(self._init_model_selection_v2())  # Model Selection
-        _main_layout.addWidget(self._init_image_selection())  # Image Selection
-        _main_layout.addWidget(self._init_control_buttons())  # Init and Reset Button
-        _main_layout.addWidget(self._init_init_buttons())  # Init and Reset Button
-        _main_layout.addWidget(self._init_prompt_selection())  # Prompt Selection
-        _main_layout.addWidget(self._init_interaction_selection())  # Interaction Selection
-        _main_layout.addWidget(self._init_run_button())  # Run Button
-        _main_layout.addWidget(self._init_export_button())  # Run Button
+        _scroll_area = QScrollArea()
+        _main_layout.addWidget(_scroll_area)
+        _scroll_area.setWidgetResizable(True)
+        _scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)  # Enables vertical scrollbar
+        _scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
 
-        # spacer = QSpacerItem(20, 40, QSizePolicy.Minimum)  # , QSizePolicy.Expanding)
-        # _main_layout.addItem(spacer)
+        _scroll_widget = QWidget()
+        _scroll_layout = QVBoxLayout(_scroll_widget)
+        _scroll_area.setWidget(_scroll_widget)
+        _scroll_area.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
+        _scroll_widget.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
 
-        _main_layout.addWidget(self._init_acknowledgements())  # Acknowledgements
+        _scroll_layout.addWidget(self._init_model_selection())  # Model Selection
+        _scroll_layout.addWidget(self._init_image_selection())  # Image Selection
+        _scroll_layout.addWidget(self._init_control_buttons())  # Init and Reset Button
+        _scroll_layout.addWidget(self._init_init_buttons())  # Init and Reset Button
+        _scroll_layout.addWidget(self._init_prompt_selection())  # Prompt Selection
+        _scroll_layout.addWidget(self._init_interaction_selection())  # Interaction Selection
+        _scroll_layout.addWidget(self._init_run_button())  # Run Button
+        _scroll_layout.addWidget(self._init_export_button())  # Run Button
+
+        _scroll_layout.addWidget(self._init_acknowledgements())  # Acknowledgements
 
         self._unlock_session()
         self._viewer.bind_key("Ctrl+Q", self._close, overwrite=True)
@@ -108,12 +117,6 @@ class BaseGUI(QWidget):
         self.add_button.setEnabled(True)
         self.add_ckbx.setEnabled(True)
 
-    # def _reset_session(self):
-    #     """Clear Layers, reset session configuration and unlock the session controls."""
-    #     self.session_cfg = None
-    #     self._clear_layers()
-    #     self._unlock_session()
-
     def _clear_layers(self):
         """Abstract function to clear all needed layers"""
 
@@ -121,7 +124,7 @@ class BaseGUI(QWidget):
         """Initializes the model selection as a combo box."""
         _group_box = QGroupBox("Model Selection:")
         _layout = QVBoxLayout()
-        model_options = ["nnInteractive_v0.0"]
+        model_options = ["nnInteractive_v1.0"]
 
         self.model_selection = setup_combobox(
             _layout, options=model_options, function=self.on_model_selected
@@ -150,36 +153,6 @@ class BaseGUI(QWidget):
 
         _group_box.setLayout(_layout)
         return _group_box
-
-    # Init Methods - Old Version
-    # def _init_model_selection(self) -> QGroupBox:
-    #     """Initializes the model selection as a combo box."""
-    #     _group_box = QGroupBox("Model Selection:")
-    #     _layout = QVBoxLayout()
-    #
-    #     self.nnUNet_results = nnUNet_results
-    #     self.nnUNet_dataset = "Dataset224_nnInteractive"
-    #
-    #     _dir = Path(self.nnUNet_results).joinpath(self.nnUNet_dataset)
-    #     _folders = [str(f.name) for f in _dir.iterdir() if f.is_dir()] if _dir.is_dir() else []
-    #     if _folders == []:
-    #         warnings.warn(
-    #             f"No nnInteractive checkpoints {self.nnUNet_dataset} found in your nnUNet_results folder {self.nnUNet_results}. Add some and restart the plugin",
-    #             UserWarning,
-    #             stacklevel=2,
-    #         )
-    #     self.model_selection = setup_tooltipcombobox(_layout, _folders, self.on_model_selected)
-    #     self.model_selection.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
-    #
-    #     self.bg_preprocessing_ckbx = setup_checkbox(
-    #         _layout,
-    #         "Background Preprocessing",
-    #         True,
-    #         tooltips="Use background preprocessing for nnInteractive session",
-    #     )
-    #
-    #     _group_box.setLayout(_layout)
-    #     return _group_box
 
     def _init_image_selection(self) -> QGroupBox:
         """Initializes the image selection combo box in a group box."""
@@ -275,20 +248,6 @@ class BaseGUI(QWidget):
             tooltips="Press T to switch",
         )
 
-        # def on_key_event(event):
-        #     print(event)
-        #     # if event.key == Qt.Key_Control:  # Check for Ctrl key
-        #     #     if event.type == "key_press":
-        #     #         ctrl_button.setChecked(True)  # Set button to pressed
-        #     #     elif event.type == "key_release":
-        #     #         ctrl_button.setChecked(False)
-        #
-        # # self._viewer.bind_key('Control', lambda event: on_key_event(event))
-        # # key = QShortcut(QKeySequence("Control"), self.prompt_button)
-        # # # key.activated.connect(function)
-        # # key.event.connect(on_key_event)
-        # self._viewer.bind_key("Control", lambda event: on_key_event(event))
-
         _group_box.setLayout(_layout)
         return _group_box
 
@@ -334,7 +293,10 @@ class BaseGUI(QWidget):
         _layout.addLayout(h_layout)
 
         self.add_button = setup_button(
-            h_layout, "Add Interaction", self.add_interaction, shortcut="R", tooltips="Press R"
+            h_layout,
+            "Add Interaction",
+            self.add_interaction,
+            tooltips="add the current interaction",
         )
         self.run_button = setup_button(
             h_layout, "Run", self.on_run, shortcut="R", tooltips="Press R"
