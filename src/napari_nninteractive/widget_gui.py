@@ -44,7 +44,7 @@ class BaseGUI(QWidget):
 
     def __init__(self, viewer: Viewer, parent: Optional[QWidget] = None):
         super().__init__(parent)
-        self._width = 275
+        self._width = 300
         self.setMinimumWidth(self._width)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self._viewer = viewer
@@ -74,7 +74,7 @@ class BaseGUI(QWidget):
         _scroll_layout.addWidget(self._init_run_button())  # Run Button
         _scroll_layout.addWidget(self._init_export_button())  # Run Button
 
-        _scroll_layout.addWidget(self._init_acknowledgements())  # Acknowledgements
+        # _scroll_layout.addWidget(self._init_acknowledgements())  # Acknowledgements
 
         self._unlock_session()
         self._viewer.bind_key("Ctrl+Q", self._close, overwrite=True)

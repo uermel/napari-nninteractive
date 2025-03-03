@@ -1,5 +1,10 @@
-# Napari-nnInteractive
+<img src="imgs/nnInteractive_header.png">
 
+# nnInteractive: Title
+
+Abstract
+
+<img src="imgs/figure1_method.png">
 ______________________________________________________________________
 
 <!--
@@ -81,6 +86,10 @@ c) Run this to start napari with the plugin and open an image directly
 ```
 napari demo_data/AbdominalOrganSegmentation_img0004_0000.nii.gz -w napari-nninteractive
 ```
+
+# How to use
+
+<img src="imgs/gui_instuctions.png">
 
 ______________________________________________________________________
 

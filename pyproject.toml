@@ -26,13 +26,12 @@ classifiers = [
 requires-python = ">=3.10"
 dependencies = [
     "numpy",
-    "magicgui",
     "qtpy",
-    "scikit-image",
-    "napari[all]",
+    "napari[pyqt]",
     "napari-nifti",
     "huggingface_hub",
-    "nnInteractive>=1.0.0"
+    "nnInteractive>=1.0.0",
+    "hf_transfer",
 ]
 
 [project.optional-dependencies]
