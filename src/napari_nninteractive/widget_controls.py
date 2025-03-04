@@ -1,4 +1,5 @@
 import os
+import warnings
 from pathlib import Path
 from typing import Any, Optional
 
@@ -252,17 +253,19 @@ class LayerControls(BaseGUI):
         _spacing = image_layer.scale
 
         # 1. Check and Correct Non Orthogonal Data
-        if not image_layer._slice_input.is_orthogonal(_affine):
-            _origin = _affine.translate
-            # we ignore directtion and shear
-            _affine = Affine(scale=_spacing, translate=_origin)
-            show_warning(
-                "Your data is non-orthogonal. This is not supported by napari. "
-                "To fix this the direction is ignored during visualizing which changes the appearance (only visual) of your data. "
-            )
-            _step = self._viewer.dims.current_step
-            image_layer.affine = _affine
-            self._viewer.dims.current_step = _step
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", FutureWarning)
+            if not image_layer._slice_input.is_orthogonal(_affine):
+                _origin = _affine.translate
+                # we ignore directtion and shear
+                _affine = Affine(scale=_spacing, translate=_origin)
+                show_warning(
+                    "Your data is non-orthogonal. This is not supported by napari. "
+                    "To fix this the direction is ignored during visualizing which changes the appearance (only visual) of your data. "
+                )
+                _step = self._viewer.dims.current_step
+                image_layer.affine = _affine
+                self._viewer.dims.current_step = _step
 
         # 2. Convert 2D to dummy 3D data
         if _ndim == 2:
@@ -344,6 +347,10 @@ class LayerControls(BaseGUI):
         if layer_name is not None and layer_name in self._viewer.layers:  # Activate the Layer
             self._viewer.layers.selection.clear()
             self._viewer.layers.selection.add(self._viewer.layers[layer_name])
+            self._viewer.layers.selection.active = self._viewer.layers[layer_name]
+
+            self._viewer.layers.selection.events.active(value=self._viewer.layers[layer_name])
+
         elif self.interaction_type == 0:  # Add Point Layer
             self.add_point_layer()
         elif self.interaction_type == 1:  # Add BBox Layer
@@ -352,6 +359,10 @@ class LayerControls(BaseGUI):
             self.add_scribble_layer()
         elif self.interaction_type == 3:  # Add Lasso Layer
             self.add_lasso_layer()
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", FutureWarning)
+            self._viewer.window._qt_viewer.setFocus()
 
     def on_run(self):
         if self.session is not None:

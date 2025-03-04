@@ -74,7 +74,7 @@ class BaseGUI(QWidget):
         _scroll_layout.addWidget(self._init_run_button())  # Run Button
         _scroll_layout.addWidget(self._init_export_button())  # Run Button
 
-        # _scroll_layout.addWidget(self._init_acknowledgements())  # Acknowledgements
+        _scroll_layout.addWidget(self._init_acknowledgements())  # Acknowledgements
 
         self._unlock_session()
         self._viewer.bind_key("Ctrl+Q", self._close, overwrite=True)
