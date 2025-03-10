@@ -2,6 +2,7 @@ import warnings
 from pathlib import Path
 from typing import Any, Optional
 
+import nnInteractive
 import numpy as np
 import torch
 from batchgenerators.utilities.file_and_folder_operations import join, load_json
@@ -9,7 +10,6 @@ from napari.viewer import Viewer
 from nnunetv2.utilities.find_class_by_name import recursive_find_python_class
 from qtpy.QtWidgets import QWidget
 
-import nnInteractive
 from napari_nninteractive.widget_controls import LayerControls
 
 
@@ -100,10 +100,10 @@ class nnInteractiveWidget(LayerControls):
         if self.session is not None:
             self.session.reset_interactions()
 
-    def on_reset_interations(self):
+    def on_reset_interactions(self):
         """Reset only the current interaction"""
         _ind = self.interaction_button.index
-        super().on_reset_interations()
+        super().on_reset_interactions()
         if self.session is not None:
             self.session.reset_interactions()
 

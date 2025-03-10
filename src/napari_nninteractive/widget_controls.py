@@ -231,8 +231,8 @@ class LayerControls(BaseGUI):
         else:
             # Download Checkpoint
             # TODO remove Token when having puplic checkpoints
-            login(token="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")  # Only because private Repository
-            repo_id = "kraemer/nnInteractive"
+            login(token="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")  # Only because private Repository
+            repo_id = "nnInteractive/nnInteractive"
             force_download = False
             download_path = snapshot_download(
                 repo_id=repo_id, allow_patterns=[f"{model_name}/*"], force_download=force_download
@@ -257,7 +257,7 @@ class LayerControls(BaseGUI):
             warnings.simplefilter("ignore", FutureWarning)
             if not image_layer._slice_input.is_orthogonal(_affine):
                 _origin = _affine.translate
-                # we ignore directtion and shear
+                # we ignore direction and shear
                 _affine = Affine(scale=_spacing, translate=_origin)
                 show_warning(
                     "Your data is non-orthogonal. This is not supported by napari. "
@@ -301,9 +301,9 @@ class LayerControls(BaseGUI):
         # Lock the Session
         self._lock_session()
 
-    def on_reset_interations(self):
+    def on_reset_interactions(self):
         """Reset only the current interaction"""
-        super().on_reset_interations()
+        super().on_reset_interactions()
         self.on_layer_selected()
 
     def on_next(self) -> None:

@@ -31,8 +31,9 @@ dependencies = [
     "napari[pyqt]",
     "napari-nifti",
     "huggingface_hub",
-    "nnInteractive>=1.0.0",
     "hf_transfer",
+    "nnInteractive>=1.0.0",
+    "napari_toolkit",
 ]
 
 [project.optional-dependencies]
@@ -60,7 +61,6 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "*" = ["*.yaml"]
-napari_nninteractiv = ["../resources/*.png"]
 
 [tool.setuptools.dynamic]
 version = {attr = "napari_nninteractive.__init__.__version__"}

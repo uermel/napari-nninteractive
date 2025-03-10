@@ -1,36 +1,32 @@
-import importlib.resources
 from typing import Optional
 
 from napari.layers import Image, Labels
 from napari.viewer import Viewer
+from napari_toolkit.containers import setup_vcollapsiblegroupbox, setup_vgroupbox, setup_vscrollarea
+from napari_toolkit.widgets import (
+    setup_acknowledgements,
+    setup_checkbox,
+    setup_combobox,
+    setup_hswitch,
+    setup_iconbutton,
+    setup_label,
+    setup_layerselect,
+    setup_lineedit,
+    setup_spinbox,
+    setup_vswitch,
+)
+from napari_toolkit.widgets.buttons.icon_button import setup_icon
 from qtpy.QtCore import Qt
-from qtpy.QtGui import QKeySequence, QPixmap
+from qtpy.QtGui import QKeySequence
 from qtpy.QtWidgets import (
     QComboBox,
     QGroupBox,
     QHBoxLayout,
-    QLabel,
-    QScrollArea,
     QShortcut,
     QSizePolicy,
-    QSpacerItem,
     QVBoxLayout,
     QWidget,
 )
-
-from napari_nninteractive.napari_utils.icon_factory import setup_icon
-from napari_nninteractive.napari_utils.widget_factory import (
-    setup_button,
-    setup_checkbox,
-    setup_combobox,
-    setup_hswitch,
-    setup_layerselection,
-    setup_lineedit,
-    setup_spinbox,
-    setup_text,
-    setup_vswitch,
-)
-from napari_nninteractive.napari_utils.widgets.collabsable_groubox import QCollabsableGroupBox
 
 
 class BaseGUI(QWidget):
@@ -53,17 +49,7 @@ class BaseGUI(QWidget):
         _main_layout = QVBoxLayout()
         self.setLayout(_main_layout)
 
-        _scroll_area = QScrollArea()
-        _main_layout.addWidget(_scroll_area)
-        _scroll_area.setWidgetResizable(True)
-        _scroll_area.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)  # Enables vertical scrollbar
-        _scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-
-        _scroll_widget = QWidget()
-        _scroll_layout = QVBoxLayout(_scroll_widget)
-        _scroll_area.setWidget(_scroll_widget)
-        _scroll_area.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
-        _scroll_widget.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Fixed)
+        _scroll_widget, _scroll_layout = setup_vscrollarea(_main_layout)
 
         _scroll_layout.addWidget(self._init_model_selection())  # Model Selection
         _scroll_layout.addWidget(self._init_image_selection())  # Image Selection
@@ -74,7 +60,7 @@ class BaseGUI(QWidget):
         _scroll_layout.addWidget(self._init_run_button())  # Run Button
         _scroll_layout.addWidget(self._init_export_button())  # Run Button
 
-        _scroll_layout.addWidget(self._init_acknowledgements())  # Acknowledgements
+        _ = setup_acknowledgements(_scroll_layout, width=self._width)  # Acknowledgements
 
         self._unlock_session()
         self._viewer.bind_key("Ctrl+Q", self._close, overwrite=True)
@@ -96,6 +82,9 @@ class BaseGUI(QWidget):
         self.run_ckbx.setEnabled(False)
         self.export_button.setEnabled(False)
         self.reset_interaction_button.setEnabled(False)
+        self.propagate_ckbx.setEnabled(False)
+        self.label_for_init.setEnabled(False)
+        self.class_for_init.setEnabled(False)
         # self.empty_mask_btn.setEnabled(False)
         self.load_mask_btn.setEnabled(False)
         self.add_button.setEnabled(False)
@@ -112,6 +101,9 @@ class BaseGUI(QWidget):
         self.run_ckbx.setEnabled(True)
         self.export_button.setEnabled(True)
         self.reset_interaction_button.setEnabled(True)
+        self.propagate_ckbx.setEnabled(True)
+        self.label_for_init.setEnabled(True)
+        self.class_for_init.setEnabled(True)
         # self.empty_mask_btn.setEnabled(True)
         self.load_mask_btn.setEnabled(True)
         self.add_button.setEnabled(True)
@@ -122,8 +114,8 @@ class BaseGUI(QWidget):
 
     def _init_model_selection(self) -> QGroupBox:
         """Initializes the model selection as a combo box."""
-        _group_box = QGroupBox("Model Selection:")
-        _layout = QVBoxLayout()
+        _group_box, _layout = setup_vgroupbox(text="Model Selection:")
+
         model_options = ["nnInteractive_v1.0"]
 
         self.model_selection = setup_combobox(
@@ -141,8 +133,10 @@ class BaseGUI(QWidget):
             self.model_selection_local.setText("")
             self.on_model_selected()
 
-        btn = setup_button(_boxlayout, "", function=_reset_local_ckpt_lineedit)
-        setup_icon(btn, "delete_shape", theme=self._viewer.theme)
+        btn = setup_iconbutton(
+            _boxlayout, "", "delete_shape", self._viewer.theme, function=_reset_local_ckpt_lineedit
+        )
+        btn.setFixedWidth(30)
 
         self.bg_preprocessing_ckbx = setup_checkbox(
             _layout,
@@ -156,10 +150,9 @@ class BaseGUI(QWidget):
 
     def _init_image_selection(self) -> QGroupBox:
         """Initializes the image selection combo box in a group box."""
-        _group_box = QGroupBox("Image Selection:")
-        _layout = QVBoxLayout()
+        _group_box, _layout = setup_vgroupbox(text="Image Selection:")
 
-        self.image_selection = setup_layerselection(
+        self.image_selection = setup_layerselect(
             _layout, viewer=self._viewer, layer_type=Image, function=self.on_image_selected
         )
         self.image_selection.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
@@ -169,64 +162,67 @@ class BaseGUI(QWidget):
 
     def _init_control_buttons(self) -> QGroupBox:
         """Initializes the control buttons (Initialize and Reset)."""
-        _group_box = QGroupBox("")
-        _layout = QVBoxLayout()
+        _group_box, _layout = setup_vgroupbox(text="")
 
-        self.init_button = setup_button(
-            _layout, "Initialize", self.on_init, tooltips="Initialize the Model and Image Pair"
+        self.init_button = setup_iconbutton(
+            _layout,
+            "Initialize",
+            "new_labels",
+            self._viewer.theme,
+            self.on_init,
+            tooltips="Initialize the Model and Image Pair",
         )
 
-        self.reset_interaction_button = setup_button(
+        self.reset_interaction_button = setup_iconbutton(
             _layout,
             "Reset Object",
-            self.on_reset_interations,
+            "delete",
+            self._viewer.theme,
+            self.on_reset_interactions,
             tooltips="Keep Model and Image Pair, just reset the interactions for the current object",
         )
-        self.reset_button = setup_button(
+        self.reset_button = setup_iconbutton(
             _layout,
             "Next Object",
+            "step_right",
+            self._viewer.theme,
             self.on_next,
             tooltips="Keep current segmentation and go to the next object - press M",
             shortcut="M",
         )
-
-        setup_icon(self.init_button, "new_labels", theme=self._viewer.theme)
-        setup_icon(self.reset_interaction_button, "delete", theme=self._viewer.theme)
-        setup_icon(self.reset_button, "step_right", theme=self._viewer.theme)
 
         _group_box.setLayout(_layout)
         return _group_box
 
     def _init_init_buttons(self):
         """Initializes the control buttons (Initialize and Reset)."""
-        _group_box = QCollabsableGroupBox("Initialize with Segmentation:")
-        _group_box.setChecked(False)
-        _layout = QVBoxLayout()
+        _group_box, _layout = setup_vcollapsiblegroupbox(
+            text="Initialize with Segmentation:", collapsed=True
+        )
 
         h_layout = QHBoxLayout()
 
-        self.label_for_init = setup_layerselection(h_layout, viewer=self._viewer, layer_type=Labels)
-        self.label_for_init.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
-        _text = setup_text(h_layout, "Class ID:")
+        self.label_for_init = setup_layerselect(
+            h_layout, viewer=self._viewer, layer_type=Labels, stretch=4
+        )
+
+        _text = setup_label(h_layout, "Class ID:", stretch=2)
         _text.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         _text.setFixedWidth(70)
-        self.class_for_init = setup_spinbox(h_layout)
+        self.class_for_init = setup_spinbox(h_layout, stretch=1)
         self.class_for_init.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Minimum)
 
-        h_layout.setStretch(0, 4)
-        h_layout.setStretch(1, 2)
-        h_layout.setStretch(2, 1)
         _layout.addLayout(h_layout)
 
-        # self.empty_mask_btn = setup_button(
-        #     _layout, "Create Empty Layer", function=self.add_mask_init_layer
-        # )
-        # setup_icon(self.empty_mask_btn, "paint", theme=self._viewer.theme)
+        self.load_mask_btn = setup_iconbutton(
+            _layout,
+            "Initialize with Mask",
+            "logo_silhouette",
+            self._viewer.theme,
+            self.on_load_mask,
+        )
 
-        self.load_mask_btn = setup_button(_layout, "Initialize with Mask", self.on_load_mask)
-        setup_icon(self.load_mask_btn, "logo_silhouette", theme=self._viewer.theme)
-
-        _txt = setup_text(
+        _txt = setup_label(
             _layout, "<b>Warning:</b> This will reset all interactions<br>for the current object"
         )
         _group_box.setLayout(_layout)
@@ -236,14 +232,14 @@ class BaseGUI(QWidget):
 
     def _init_prompt_selection(self) -> QGroupBox:
         """Initializes the prompt selection as switch with options and shortcuts."""
-        _group_box = QGroupBox("Prompt Type:")
-        _layout = QHBoxLayout()
+        _group_box, _layout = setup_vgroupbox(text="Prompt Type:")
 
         self.prompt_button = setup_hswitch(
             _layout,
             options=["positive", "negative"],
             function=self.on_prompt_selected,
             default=0,
+            fixed_color="rgb(0,100, 167)",
             shortcut="T",
             tooltips="Press T to switch",
         )
@@ -253,13 +249,13 @@ class BaseGUI(QWidget):
 
     def _init_interaction_selection(self) -> QGroupBox:
         """Initializes the interaction selection as switch with options and shortcuts."""
-        _group_box = QGroupBox("Interaction Tools:")
-        _layout = QVBoxLayout()
+        _group_box, _layout = setup_vgroupbox(text="Interaction Tools:")
 
         self.interaction_button = setup_vswitch(
             _layout,
             options=["Point", "BBox", "Scribble", "Lasso"],
             function=self.on_interaction_selected,
+            fixed_color="rgb(0,100, 167)",
         )
 
         setup_icon(self.interaction_button.buttons[0], "new_points", theme=self._viewer.theme)
@@ -284,22 +280,27 @@ class BaseGUI(QWidget):
 
     def _init_run_button(self) -> QGroupBox:
         """Initializes the run button and auto-run checkbox"""
-        _group_box = QCollabsableGroupBox("Manual Control:")
-        _group_box.setChecked(False)
-
-        _layout = QVBoxLayout()
+        _group_box, _layout = setup_vcollapsiblegroupbox(text="Manual Control:", collapsed=True)
 
         h_layout = QHBoxLayout()
         _layout.addLayout(h_layout)
 
-        self.add_button = setup_button(
+        self.add_button = setup_iconbutton(
             h_layout,
             "Add Interaction",
+            "add",
+            self._viewer.theme,
             self.add_interaction,
             tooltips="add the current interaction",
         )
-        self.run_button = setup_button(
-            h_layout, "Run", self.on_run, shortcut="R", tooltips="Press R"
+        self.run_button = setup_iconbutton(
+            h_layout,
+            "Run",
+            "right_arrow",
+            self._viewer.theme,
+            self.on_run,
+            shortcut="R",
+            tooltips="Press R",
         )
 
         self.run_ckbx = setup_checkbox(
@@ -316,55 +317,16 @@ class BaseGUI(QWidget):
             tooltips="Add interaction automatically to session",
         )
 
-        setup_icon(self.run_button, "right_arrow")
-        setup_icon(self.add_button, "add")
         _group_box.setLayout(_layout)
         return _group_box
 
     def _init_export_button(self) -> QGroupBox:
         """Initializes the export button"""
-        _group_box = QGroupBox("")
-        _layout = QVBoxLayout()
+        _group_box, _layout = setup_vgroupbox(text="")
 
-        self.export_button = setup_button(_layout, "Export", self._export)
-        setup_icon(self.export_button, "pop_out", theme=self._viewer.theme)
-        _group_box.setLayout(_layout)
-        return _group_box
-
-    def _init_acknowledgements(self) -> QGroupBox:
-        """Initializes acknowledgements by adding the logos"""
-        _group_box = QGroupBox("")
-        _group_box.setStyleSheet(
-            """
-            QGroupBox {
-                background-color: white;
-            }
-        """
+        self.export_button = setup_iconbutton(
+            _layout, "Export", "pop_out", self._viewer.theme, self._export
         )
-
-        _layout = QVBoxLayout()
-
-        path_resources = importlib.resources.files("napari_nninteractive.resources")
-        path_DKFZ = path_resources.joinpath("DKFZ_Logo.png")
-        path_HI = path_resources.joinpath("HI_Logo.png")
-
-        pixmap_DKFZ = QPixmap(str(path_DKFZ))
-        pixmap_HI = QPixmap(str(path_HI))
-
-        pixmap_DKFZ = pixmap_DKFZ.scaledToWidth(self._width, Qt.SmoothTransformation)
-        pixmap_HI = pixmap_HI.scaledToWidth(self._width, Qt.SmoothTransformation)
-
-        logo_DKFI = QLabel()
-        logo_HI = QLabel()
-
-        logo_DKFI.setPixmap(pixmap_DKFZ)
-        logo_HI.setPixmap(pixmap_HI)
-        spacer = QSpacerItem(20, 40, QSizePolicy.Minimum)  # , QSizePolicy.Expanding)
-
-        _layout.addWidget(logo_HI)
-        _layout.addSpacerItem(spacer)
-        _layout.addWidget(logo_DKFI)
-
         _group_box.setLayout(_layout)
         return _group_box
 
@@ -373,16 +335,16 @@ class BaseGUI(QWidget):
         """Initializes the session configuration based on the selected model and image."""
 
     def on_image_selected(self):
-        """When an new image is selected reset layers and session (cfg + gui)"""
+        """When a new image is selected reset layers and session (cfg + gui)"""
         self._clear_layers()
         self._unlock_session()
 
     def on_model_selected(self):
-        """When an new model is selected reset layers and session (cfg + gui)"""
+        """When a new model is selected reset layers and session (cfg + gui)"""
         self._clear_layers()
         self._unlock_session()
 
-    def on_reset_interations(self):
+    def on_reset_interactions(self):
         """Reset only the current interaction"""
         self._clear_layers()
 
@@ -405,7 +367,7 @@ class BaseGUI(QWidget):
         print("on_run")
 
     def on_propagate_ckbx(self, *args, **kwargs):
-        print("on_propergate_ckbx", *args, **kwargs)
+        print("on_propagate_ckbx", *args, **kwargs)
 
     def on_load_mask(self):
         pass
