@@ -82,12 +82,6 @@ napari demo_data/liver_145_0000.nii.gz -w napari-nninteractive
 
 # How to use
 
-## Demo Data
-
-For the review process, we have provided demo data under the following anonymous link. Feel free to use your own data as well.
-
-*https://drive.google.com/drive/folders/1Wq8IHuGwH58jWCNvHi13j4rPhwotHHP_?usp=sharing*
-
 **Note:** To open Nifti (.nii.gz, .nii) files we recommend to select napari-nifti.
 
 <img src="imgs/gui_instuctions.png" width="1200">
