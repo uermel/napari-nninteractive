@@ -160,32 +160,3 @@ class LassoLayer(BaseLayerClass, Shapes):
         mask[(slice(None),) * dim_not_displayed + (slice_id,)] = mask_slice
 
         return mask
-
-    # def to_labels(self, labels_shape=None):
-    #     """Return an integer labels image.
-    #
-    #     Parameters
-    #     ----------
-    #     labels_shape : np.ndarray | tuple | None
-    #         Tuple defining shape of labels image to be generated. If non
-    #         specified, takes the max of all the vertiecs
-    #
-    #     Returns
-    #     -------
-    #     labels : np.ndarray
-    #         Integer array where each value is either 0 for background or an
-    #         integer up to N for points inside the shape at the index value - 1.
-    #         For overlapping shapes z-ordering will be respected.
-    #     """
-    #     if labels_shape is None:
-    #         # See https://github.com/napari/napari/issues/2778
-    #         # Point coordinates land on pixel centers. We want to find the
-    #         # smallest shape that will hold the largest point in the data,
-    #         # using rounding.
-    #         labels_shape = np.round(self._extent_data[1]) + 1
-    #
-    #     labels_shape = np.ceil(labels_shape).astype('int')
-    #     print(labels_shape)
-    #     labels = self._data_view.to_labels(labels_shape=labels_shape)
-    #     print(n)
-    #     return labels

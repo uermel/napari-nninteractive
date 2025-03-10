@@ -20,13 +20,13 @@ from napari_nninteractive.controls.scribble_controls import CustomQtScribbleCont
 from napari_nninteractive.layers.bbox_layer import BBoxLayer
 from napari_nninteractive.layers.lasso_layer import LassoLayer
 from napari_nninteractive.layers.point_layer import SinglePointLayer
-from napari_nninteractive.layers.scribble_layer import ScibbleLayer
+from napari_nninteractive.layers.scribble_layer import ScribbleLayer
 from napari_nninteractive.utils.utils import ColorMapper, determine_layer_index
 from napari_nninteractive.widget_gui import BaseGUI
 
 layer_to_controls[SinglePointLayer] = CustomQtPointsControls
 layer_to_controls[BBoxLayer] = CustomQtBBoxControls
-layer_to_controls[ScibbleLayer] = CustomQtScribbleControls
+layer_to_controls[ScribbleLayer] = CustomQtScribbleControls
 layer_to_controls[LassoLayer] = CustomQtLassoControls
 
 
@@ -106,7 +106,7 @@ class LayerControls(BaseGUI):
     def add_scribble_layer(self) -> None:
         """Adds a scribble layer to the viewer with an initial blank data array."""
         _data = np.zeros(self.session_cfg["shape"], dtype=np.uint8)
-        scribble_layer = ScibbleLayer(
+        scribble_layer = ScribbleLayer(
             data=_data,
             name=self.scribble_layer_name,
             affine=self.session_cfg["affine"],
@@ -230,7 +230,7 @@ class LayerControls(BaseGUI):
             self.checkpoint_path = model_name_local
         else:
             # Download Checkpoint
-            # TODO remove Token when having puplic checkpoints
+            # TODO remove Token when having public checkpoints
             login(token="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")  # Only because private Repository
             repo_id = "nnInteractive/nnInteractive"
             force_download = False
@@ -252,7 +252,7 @@ class LayerControls(BaseGUI):
         _affine = image_layer.affine
         _spacing = image_layer.scale
 
-        # 1. Check and Correct Non Orthogonal Data
+        # 1. Check and Correct Non-orthogonal Data
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", FutureWarning)
             if not image_layer._slice_input.is_orthogonal(_affine):
@@ -405,8 +405,8 @@ class LayerControls(BaseGUI):
         Performs inference on the provided data.
 
         Args:
-            _data: The data obtained from the layer's run method.
-            _index (int): The index of the layer type, corresponding to the layer_dict key.
+            data: The data obtained from the layer's run method.
+            index (int): The index of the layer type, corresponding to the layer_dict key.
         """
         print(
             f"Inference for interaction {index} and prompt {self.prompt_button.index == 0} and valid data {data is not None} "

@@ -5,7 +5,7 @@ from napari.layers.base._base_constants import ActionType
 from napari_nninteractive.layers.abstract_layer import BaseLayerClass
 
 
-class ScibbleLayer(BaseLayerClass, Labels):
+class ScribbleLayer(BaseLayerClass, Labels):
     """
     A scribble layer class that extends `BaseLayerClass` and `Labels`, with prompt-based color
     adjustments and custom drawing interactions. This class handles color management, adding
