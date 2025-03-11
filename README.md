@@ -96,7 +96,8 @@ ______________________________________________________________________
 </p>
 
 This repository is developed and maintained by the Applied Computer Vision Lab (ACVL)
-of [Helmholtz Imaging](https://www.helmholtz-imaging.de/).
+of [Helmholtz Imaging](https://www.helmholtz-imaging.de/) and the 
+[Division of Medical Image Computing](https://www.dkfz.de/en/medical-image-computing) at DKFZ.
 
 This [napari] plugin was generated with [copier] using the [napari-plugin-template].
 
