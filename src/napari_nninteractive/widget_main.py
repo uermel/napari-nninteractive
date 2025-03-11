@@ -50,7 +50,7 @@ class nnInteractiveWidget(LayerControls):
                 if isinstance(inference_class, dict):
                     inference_class = inference_class["inference_class"]
             else:
-                inference_class = "nnInteractiveInferenceSessionV3"
+                inference_class = "nnInteractiveInferenceSession"
 
             inference_class = recursive_find_python_class(
                 join(nnInteractive.__path__[0], "inference"),

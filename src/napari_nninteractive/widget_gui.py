@@ -138,13 +138,6 @@ class BaseGUI(QWidget):
         )
         btn.setFixedWidth(30)
 
-        self.bg_preprocessing_ckbx = setup_checkbox(
-            _layout,
-            "Background Preprocessing",
-            True,
-            tooltips="Use background preprocessing for nnInteractive session",
-        )
-
         _group_box.setLayout(_layout)
         return _group_box
 
@@ -179,7 +172,8 @@ class BaseGUI(QWidget):
             "delete",
             self._viewer.theme,
             self.on_reset_interactions,
-            tooltips="Keep Model and Image Pair, just reset the interactions for the current object",
+            tooltips="Keep Model and Image Pair, just reset the interactions for the current object  - press R",
+            shortcut="R",
         )
         self.reset_button = setup_iconbutton(
             _layout,
@@ -299,8 +293,7 @@ class BaseGUI(QWidget):
             "right_arrow",
             self._viewer.theme,
             self.on_run,
-            shortcut="R",
-            tooltips="Press R",
+            tooltips="Run the predict step",
         )
 
         self.run_ckbx = setup_checkbox(

@@ -79,7 +79,7 @@ class LayerControls(BaseGUI):
             # rotate=self.session_cfg["direction"],
             metadata=self.session_cfg["metadata"],
             opacity=0.7,
-            size=5,
+            size=3,
             prompt_index=self.prompt_button.index,
         )
 
