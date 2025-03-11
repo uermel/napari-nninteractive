@@ -2,6 +2,11 @@
 
 # nnInteractive: Redefining 3D Promptable Segmentation
 
+This repository contains the napari plugin for nnInteractive. Check out the
+[python backend](https://github.com/MIC-DKFZ/nnInteractive) and [MITK integration](https://www.mitk.org/MITK-nnInteractive) for more.
+
+##### Abstract:
+
 Accurate and efficient 3D segmentation is essential for both clinical and research applications.
 While foundation models like SAM have revolutionized interactive segmentation, their 2D design and domain shift limitations make them ill-suited for 3D medical images.
 Current adaptations address some of these challenges but remain limited, either lacking volumetric awareness, offering restricted interactivity, or supporting only a small set of structures and modalities.
@@ -16,9 +21,15 @@ Extensive benchmarking demonstrates that nnInteractive far surpasses existing me
 
 ## Demo Videos
 
-[![Watch the video](https://img.youtube.com/vi/H_L6LL0FRoo/0.jpg)](https://www.youtube.com/watch?v=H_L6LL0FRoo)
-[![Watch the video](https://img.youtube.com/vi/YoMZ7Xv7gKI/0.jpg)](https://www.youtube.com/watch?v=YoMZ7Xv7gKI)
-[![Watch the video](https://img.youtube.com/vi/V0rqPYA3sjA/0.jpg)](https://www.youtube.com/watch?v=V0rqPYA3sjA)
+<a href="https://www.youtube.com/watch?v=H_L6LL0FRoo">
+    <img src="https://img.youtube.com/vi/H_L6LL0FRoo/0.jpg" width="270">
+</a>
+<a href="https://www.youtube.com/watch?v=YoMZ7Xv7gKI">
+    <img src="https://img.youtube.com/vi/YoMZ7Xv7gKI/0.jpg" width="270">
+</a>
+<a href="https://www.youtube.com/watch?v=V0rqPYA3sjA">
+    <img src="https://img.youtube.com/vi/V0rqPYA3sjA/0.jpg" width="270">
+</a>
 
 ## Installation
 
