@@ -135,7 +135,7 @@ class nnInteractiveWidget(LayerControls):
 
     def on_propagate_ckbx(self, *args, **kwargs):
         if self.session is not None:
-            self.session.set_do_prediction_propagation(self.propagate_ckbx.isChecked())
+            self.session.set_do_autozoom(self.propagate_ckbx.isChecked())
 
     def on_axis_change(self, event: Any):
         """Change the brush size of the scribble layer when the axis changes"""
