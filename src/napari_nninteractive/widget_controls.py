@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Optional
 
 import numpy as np
-from huggingface_hub import login, snapshot_download
+from huggingface_hub import snapshot_download
 from napari._qt.layer_controls.qt_layer_controls_container import layer_to_controls
 from napari.layers import Labels
 from napari.layers.base._base_constants import ActionType
@@ -230,8 +230,6 @@ class LayerControls(BaseGUI):
             self.checkpoint_path = model_name_local
         else:
             # Download Checkpoint
-            # TODO remove Token when having public checkpoints
-            login(token="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")  # Only because private Repository
             repo_id = "nnInteractive/nnInteractive"
             force_download = False
             download_path = snapshot_download(
