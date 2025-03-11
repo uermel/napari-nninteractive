@@ -1,3 +1,4 @@
+import os
 import warnings
 from pathlib import Path
 from typing import Any, Optional
@@ -61,10 +62,9 @@ class nnInteractiveWidget(LayerControls):
             self.session = inference_class(
                 device=torch.device("cuda:0"),  # can also be cpu or mps. CPU not recommended
                 use_torch_compile=False,
-                torch_n_threads=16,
-                verbose=True,
-                use_background_preprocessing=self.bg_preprocessing_ckbx.isChecked(),
-                do_prediction_propagation=self.propagate_ckbx.isChecked(),
+                torch_n_threads=os.cpu_count(),
+                verbose=False,
+                do_autozoom=self.propagate_ckbx.isChecked(),
             )
 
             self.session.initialize_from_trained_model_folder(
