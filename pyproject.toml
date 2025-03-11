@@ -63,7 +63,7 @@ where = ["src"]
 "*" = ["*.yaml"]
 
 [project.urls]
-Homepage = "https://github.com/MIC-DKFZ/napari-nninteractives"
+Homepage = "https://github.com/MIC-DKFZ/napari-nninteractive"
 Code = "https://github.com/MIC-DKFZ/napari-nninteractive"
 
 [tool.setuptools.dynamic]
