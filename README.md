@@ -58,21 +58,18 @@ pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu12
 ```
 
 ##### 3. Install this repository + dependencies via
+
 Either install via pip:
 ```bash
 pip install napari-nninteractive`
 ```
+
 Or clone and install this repository:
 ```bash
 git clone https://github.com/MIC-DKFZ/napari-nninteractive
 cd napari-nninteractive
 pip install -e .
 ```
-
-- Download this repository by pressing the Download Repository button in the top right corner
-- Extract the .zip file, For example `unzip napari-nninteractive-DP05.zip -d ./nninteractive` on Linux
-- Navigate to the extracted folder (here `cd nninteractive`)
-- Install nnInteractive with `pip install -e .`
 
 **Note:** Model weights are automatically downloaded on first use. This can take up to a couple of minutes depending on your internet connection
 
