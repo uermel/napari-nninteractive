@@ -195,5 +195,7 @@ class nnInteractiveWidget(LayerControls):
             if self.session is not None:
                 self.session.add_initial_seg_interaction(data.astype(np.uint8))
                 self._viewer.layers[self.label_layer_name].refresh()
+                if self.auto_refine.isChecked():
+                    self.on_run()
         else:
             warnings.warn("Mask is not valid - probably its empty", UserWarning, stacklevel=1)

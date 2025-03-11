@@ -5,7 +5,7 @@
 This repository contains the napari plugin for nnInteractive. Check out the
 [python backend](https://github.com/MIC-DKFZ/nnInteractive) and [MITK integration](https://www.mitk.org/MITK-nnInteractive) for more.
 
-##### Abstract:
+### Abstract:
 
 Accurate and efficient 3D segmentation is essential for both clinical and research applications.
 While foundation models like SAM have revolutionized interactive segmentation, their 2D design and domain shift limitations make them ill-suited for 3D medical images.
@@ -60,11 +60,13 @@ pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu12
 ##### 3. Install this repository + dependencies via
 
 Either install via pip:
+
 ```bash
 pip install napari-nninteractive`
 ```
 
 Or clone and install this repository:
+
 ```bash
 git clone https://github.com/MIC-DKFZ/napari-nninteractive
 cd napari-nninteractive

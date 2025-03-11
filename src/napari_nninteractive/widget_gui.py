@@ -85,6 +85,7 @@ class BaseGUI(QWidget):
         self.propagate_ckbx.setEnabled(False)
         self.label_for_init.setEnabled(False)
         self.class_for_init.setEnabled(False)
+        self.auto_refine.setEnabled(False)
         # self.empty_mask_btn.setEnabled(False)
         self.load_mask_btn.setEnabled(False)
         self.add_button.setEnabled(False)
@@ -104,6 +105,7 @@ class BaseGUI(QWidget):
         self.propagate_ckbx.setEnabled(True)
         self.label_for_init.setEnabled(True)
         self.class_for_init.setEnabled(True)
+        self.auto_refine.setEnabled(True)
         # self.empty_mask_btn.setEnabled(True)
         self.load_mask_btn.setEnabled(True)
         self.add_button.setEnabled(True)
@@ -214,6 +216,10 @@ class BaseGUI(QWidget):
             "logo_silhouette",
             self._viewer.theme,
             self.on_load_mask,
+        )
+
+        self.auto_refine = setup_checkbox(
+            _layout, "Auto refine", False, tooltips="Auto Refine the Initial Mask"
         )
 
         _txt = setup_label(
