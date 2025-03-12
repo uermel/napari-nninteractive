@@ -5,7 +5,12 @@
 This repository contains the napari plugin for nnInteractive. Check out the
 [python backend](https://github.com/MIC-DKFZ/nnInteractive) and [MITK integration](https://www.mitk.org/MITK-nnInteractive) for more.
 
-### Abstract:
+## What is nnInteractive? [![arXiv](https://img.shields.io/badge/arXiv-2503.08373-b31b1b.svg)](https://arxiv.org/abs/2503.08373)
+
+> **Authors**: Fabian Isensee*, Maximilian Rokuss*, Lars Krämer*, Stefan Dinkelacker, Ashis Ravindran, Florian Stritzke, Benjamin Hamm, Tassilo Wald, Moritz Langenberg, Constantin Ulrich, Jonathan Deissler, Ralf Floca, Klaus Maier-Hein\
+> *: shared first authors
+
+##### Abstract:
 
 Accurate and efficient 3D segmentation is essential for both clinical and research applications.
 While foundation models like SAM have revolutionized interactive segmentation, their 2D design and domain shift limitations make them ill-suited for 3D medical images.
