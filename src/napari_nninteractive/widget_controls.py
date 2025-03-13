@@ -249,6 +249,9 @@ class LayerControls(BaseGUI):
         _shape = image_layer.data.shape
         _affine = image_layer.affine
         _spacing = image_layer.scale
+        _origin = image_layer.translate
+        _direction = image_layer.rotate
+        _shear = image_layer.shear
 
         # 1. Check and Correct Non-orthogonal Data
         with warnings.catch_warnings():
@@ -276,7 +279,7 @@ class LayerControls(BaseGUI):
             _direction[-2:, -2:] = _affine.rotate
             _shear = np.insert(_affine.shear, 0, 0)
 
-            _affine = Affine(scale=_spacing, translate=_origin, rotate=_direction, shear=_shear)
+        _affine = Affine(scale=_spacing, translate=_origin, rotate=_direction, shear=_shear)
 
         self.session_cfg = {
             "name": image_name,
