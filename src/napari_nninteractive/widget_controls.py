@@ -267,6 +267,9 @@ class LayerControls(BaseGUI):
         }
 
         self.session_cfg = self.source_cfg.copy()
+        # Store original dimensionality and affine for export
+        self.session_cfg["ndim_source"] = self.source_cfg["ndim"]
+        self.session_cfg["affine_source"] = self.source_cfg["affine"]
 
         from napari_nninteractive.utils.affine import is_orthogonal
 
