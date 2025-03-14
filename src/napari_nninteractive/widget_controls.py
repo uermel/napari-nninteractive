@@ -324,8 +324,7 @@ class LayerControls(BaseGUI):
         self.add_label_layer()
         # Clear all interaction layers
         self._clear_layers()
-        # Clear the object name selection
-        self.object_name_combo.setCurrentIndex(0)
+        # We keep the current object name selection - don't reset the combobox
         self.prompt_button._uncheck()
         self.prompt_button._check(0)
 
