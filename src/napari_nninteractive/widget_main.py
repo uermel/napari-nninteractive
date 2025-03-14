@@ -7,6 +7,7 @@ import nnInteractive
 import numpy as np
 import torch
 from batchgenerators.utilities.file_and_folder_operations import join, load_json
+from napari.utils.notifications import show_warning
 from napari.viewer import Viewer
 from nnunetv2.utilities.find_class_by_name import recursive_find_python_class
 from qtpy.QtWidgets import QWidget
@@ -58,9 +59,22 @@ class nnInteractiveWidget(LayerControls):
                 "nnInteractive.inference",
             )
 
+            # CPU Fallback if noc Cuda is available
+            if torch.cuda.is_available() and False:
+                device = torch.device("cuda:0")
+            else:
+                show_warning(
+                    "Cuda is not available. Using CPU instead. This will result in longer runtimes and additionally auto-zoom will be disabled for runtime reasons"
+                )
+
+                device = torch.device("cpu")
+                self.propagate_ckbx.setChecked(False)
+
+            # device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+
             # Initialize the Session
             self.session = inference_class(
-                device=torch.device("cuda:0"),  # can also be cpu or mps. CPU not recommended
+                device=device,  # can also be cpu or mps. CPU not recommended
                 use_torch_compile=False,
                 torch_n_threads=os.cpu_count(),
                 verbose=False,
