@@ -153,7 +153,12 @@ class LayerControls(BaseGUI):
                 postfix=f" - {self.session_cfg['name']}",
             )
             _layer = self._viewer.layers[self.label_layer_name]
-            _layer.name = f"object {_index} - {self.session_cfg['name']}"
+            
+            # Get the current object name from the dropdown (if any)
+            object_name = self.object_name_combo.currentText().strip()
+            name_suffix = f" ({object_name})" if object_name else ""
+            
+            _layer.name = f"object {_index}{name_suffix} - {self.session_cfg['name']}"
             _layer.data = _layer.data.copy()
             _index += 1
         else:
@@ -319,6 +324,7 @@ class LayerControls(BaseGUI):
         self.add_label_layer()
         # Clear all interaction layers
         self._clear_layers()
+        # We keep the current object name selection - don't reset the combobox
         self.prompt_button._uncheck()
         self.prompt_button._check(0)
 
@@ -450,18 +456,36 @@ class LayerControls(BaseGUI):
                         prefix="object ",
                         postfix=f" - {self.session_cfg['name']}",
                     )
+                    # No object name for the current working layer
+                    object_name = ""
                 elif _layer.name.startswith("object ") and _layer.name.endswith(
                     f" - {self.session_cfg['name']}"
                 ):
-                    _index = int(
-                        _layer.name.replace("object ", "").replace(
-                            f" - {self.session_cfg['name']}", ""
-                        )
-                    )
+                    # Extract the object index and possibly the object name
+                    layer_name_part = _layer.name.replace(f" - {self.session_cfg['name']}", "")
+                    # Check if there's an object name in parentheses
+                    if " (" in layer_name_part and ")" in layer_name_part:
+                        base_part = layer_name_part.split(" (")[0].strip()
+                        name_part = layer_name_part.split(" (")[1].split(")")[0]
+                        try:
+                            _index = int(base_part.replace("object ", ""))
+                            object_name = name_part
+                        except ValueError:
+                            # If we can't convert to int, skip this layer
+                            continue
+                    else:
+                        try:
+                            _index = int(layer_name_part.replace("object ", ""))
+                            object_name = ""
+                        except ValueError:
+                            # If we can't convert to int, skip this layer
+                            continue
                 else:
                     continue
 
-                _file_name = f"{_output_file}_{str(_index).zfill(4)}{_dtype}"
+                # Add object name to filename if it exists
+                name_suffix = f"_{object_name}" if object_name else ""
+                _file_name = f"{_output_file}_{str(_index).zfill(4)}{name_suffix}{_dtype}"
                 _file = str(Path(_output_dir).joinpath(_file_name))
 
                 # reverse the corrections for non-orthogonal data and convert dummy 3d back to 2d
@@ -485,8 +509,8 @@ class LayerControls(BaseGUI):
                         # Create a binary mask for the current object (all non-zero values are set to 1)
                         binary_mask = (_data > 0).astype(np.uint8)
                         
-                        # Create OME-Zarr file path
-                        _zarr_file_name = f"{_output_file}_{str(_index).zfill(4)}.zarr"
+                        # Create OME-Zarr file path with object name if it exists
+                        _zarr_file_name = f"{_output_file}_{str(_index).zfill(4)}{name_suffix}.zarr"
                         _zarr_path = Path(_output_dir).joinpath(_zarr_file_name)
                         
                         # Create the zarr store with proper OME-Zarr v0.4 structure
@@ -502,9 +526,13 @@ class LayerControls(BaseGUI):
                             dtype=np.uint8
                         )
                         
-                        # Add OME-Zarr metadata
+                        # Add OME-Zarr metadata including object name if it exists
+                        layer_display_name = f"Object {_index}"
+                        if object_name:
+                            layer_display_name = f"{layer_display_name} ({object_name})"
+                            
                         root.attrs['omero'] = {
-                            'name': f'Object {_index} - {self.session_cfg["name"]}',
+                            'name': f'{layer_display_name} - {self.session_cfg["name"]}',
                             'version': '0.4'  # Use a stable version
                         }
                         
@@ -524,7 +552,7 @@ class LayerControls(BaseGUI):
                             
                         multiscales = [{
                             'version': '0.4',
-                            'name': f'Object {_index}',
+                            'name': layer_display_name,
                             'axes': axes,
                             'datasets': [{'path': '0'}]
                         }]
@@ -544,3 +572,36 @@ class LayerControls(BaseGUI):
                 del _layer_temp
         else:
             raise ValueError("Output path has to be a directory, not a file")
+
+    def on_object_name_selected(self, text=None, *args, **kwargs) -> None:
+        """
+        Updates the name of the current label layer when a new object name is selected.
+        """
+        if self.label_layer_name in self._viewer.layers:
+            # If text is provided by the signal, use it, otherwise get from combobox
+            object_name = text if text is not None else self.object_name_combo.currentText().strip()
+            
+            # Get the current layer's name
+            current_layer = self._viewer.layers[self.label_layer_name]
+            
+            # If the layer is still using the default name, don't modify it
+            if current_layer.name == self.label_layer_name:
+                return
+                
+            # Parse the current layer name to extract the index
+            layer_name_part = current_layer.name.replace(f" - {self.session_cfg['name']}", "")
+            
+            # Extract the base part (with "object" and the index)
+            if " (" in layer_name_part and ")" in layer_name_part:
+                base_part = layer_name_part.split(" (")[0].strip()
+            else:
+                base_part = layer_name_part.strip()
+                
+            # Create the new name with or without the object name
+            if object_name:
+                new_name = f"{base_part} ({object_name}) - {self.session_cfg['name']}"
+            else:
+                new_name = f"{base_part} - {self.session_cfg['name']}"
+                
+            # Update the layer name
+            current_layer.name = new_name

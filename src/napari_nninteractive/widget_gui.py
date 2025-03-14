@@ -39,12 +39,21 @@ class BaseGUI(QWidget):
     """
 
     def __init__(self, viewer: Viewer, parent: Optional[QWidget] = None):
+        """Initializes the BaseGUI instance with the viewer and parent widget.
+
+        Args:
+            viewer (Viewer): The napari viewer instance.
+            parent (Optional[QWidget], optional): The parent widget. Defaults to None.
+        """
         super().__init__(parent)
         self._width = 300
         self.setMinimumWidth(self._width)
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self._viewer = viewer
         self.session_cfg = None
+        
+        # Initialize with an empty option for object names
+        self.object_names = [""]
 
         _main_layout = QVBoxLayout()
         self.setLayout(_main_layout)
@@ -91,6 +100,8 @@ class BaseGUI(QWidget):
         self.load_mask_btn.setEnabled(False)
         self.add_button.setEnabled(False)
         self.add_ckbx.setEnabled(False)
+        self.object_name_combo.setEnabled(False)
+        self.add_name_button.setEnabled(False)
 
     def _lock_session(self):
         """Locks the session, disabling model and image selection, and enabling control buttons."""
@@ -112,6 +123,8 @@ class BaseGUI(QWidget):
         self.load_mask_btn.setEnabled(True)
         self.add_button.setEnabled(True)
         self.add_ckbx.setEnabled(True)
+        self.object_name_combo.setEnabled(True)
+        self.add_name_button.setEnabled(True)
 
     def _clear_layers(self):
         """Abstract function to clear all needed layers"""
@@ -187,6 +200,30 @@ class BaseGUI(QWidget):
             self.on_next,
             tooltips="Keep current segmentation and go to the next object - press M",
             shortcut="M",
+        )
+        
+        # Add object naming dropdown
+        h_layout = QHBoxLayout()
+        _layout.addLayout(h_layout)
+        
+        name_label = setup_label(h_layout, "Object Name:", stretch=2)
+        name_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        
+        self.object_name_combo = QComboBox()
+        self.object_name_combo.addItems(self.object_names)
+        self.object_name_combo.setEditable(True)
+        self.object_name_combo.setToolTip("Select or enter a name for the current object")
+        self.object_name_combo.currentTextChanged.connect(self.on_object_name_selected)
+        h_layout.addWidget(self.object_name_combo, stretch=5)
+        
+        # Add button to add the current name to the dropdown list
+        self.add_name_button = setup_iconbutton(
+            h_layout,
+            "",
+            "add",
+            self._viewer.theme,
+            self.on_add_object_name,
+            tooltips="Add current name to the dropdown list"
         )
 
         _group_box.setLayout(_layout)
@@ -384,6 +421,31 @@ class BaseGUI(QWidget):
 
     def add_mask_init_layer(self):
         pass
+        
+    def on_object_name_selected(self, text=None, *args, **kwargs) -> None:
+        """Called when a new object name is selected from the dropdown."""
+        # If text is provided by the signal, use it, otherwise get from combobox
+        object_name = text if text is not None else self.object_name_combo.currentText()
+        print("on_object_name_selected", object_name)
+        
+    def on_add_object_name(self, *args, **kwargs) -> None:
+        """Add the current text in the combobox to the list of names if it's not already present."""
+        current_text = self.object_name_combo.currentText().strip()
+        if current_text and current_text != "":
+            # Check if the name already exists to avoid duplicates
+            if self.object_name_combo.findText(current_text) == -1:
+                self.object_name_combo.addItem(current_text)
+                # Add to our persistent list
+                if current_text not in self.object_names:
+                    self.object_names.append(current_text)
+            
+            # Select the current text (makes it the current item)
+            index = self.object_name_combo.findText(current_text)
+            if index >= 0:
+                self.object_name_combo.setCurrentIndex(index)
+                
+            # Update the current object's name with the selected text
+            self.on_object_name_selected(current_text)
 
     def _export(self) -> None:
         """Placeholder method for exporting all generated label layers"""
