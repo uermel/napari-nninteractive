@@ -81,6 +81,7 @@ class BaseGUI(QWidget):
         self.run_button.setEnabled(False)
         self.run_ckbx.setEnabled(False)
         self.export_button.setEnabled(False)
+        self.separate_omezarr_ckbx.setEnabled(False)
         self.reset_interaction_button.setEnabled(False)
         self.propagate_ckbx.setEnabled(False)
         self.label_for_init.setEnabled(False)
@@ -101,6 +102,7 @@ class BaseGUI(QWidget):
         self.run_button.setEnabled(True)
         self.run_ckbx.setEnabled(True)
         self.export_button.setEnabled(True)
+        self.separate_omezarr_ckbx.setEnabled(True)
         self.reset_interaction_button.setEnabled(True)
         self.propagate_ckbx.setEnabled(True)
         self.label_for_init.setEnabled(True)
@@ -326,6 +328,15 @@ class BaseGUI(QWidget):
         self.export_button = setup_iconbutton(
             _layout, "Export", "pop_out", self._viewer.theme, self._export
         )
+        
+        # Add a checkbox to toggle separate OME-Zarr file export
+        self.separate_omezarr_ckbx = setup_checkbox(
+            _layout,
+            "Export as separate OME-Zarr files",
+            False,
+            tooltips="Export each segmented object to a separate OME-Zarr file"
+        )
+        
         _group_box.setLayout(_layout)
         return _group_box
 

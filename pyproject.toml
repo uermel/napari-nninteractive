@@ -45,6 +45,9 @@ testing = [
     "napari",
     "pyqt5",
 ]
+export = [
+    "zarr",  # For OME-Zarr export functionality
+]
 
 [project.entry-points."napari.manifest"]
 napari-nninteractive = "napari_nninteractive:napari.yaml"
