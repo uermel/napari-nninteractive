@@ -28,7 +28,6 @@ requires-python = ">=3.10"
 dependencies = [
     "numpy",
     "qtpy",
-    "napari[pyqt]",
     "napari-nifti",
     "huggingface_hub",
     "hf_transfer",
