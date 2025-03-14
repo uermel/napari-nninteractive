@@ -146,6 +146,15 @@ class nnInteractiveWidget(LayerControls):
             if self.scribble_layer_name in self._viewer.layers:
                 self._viewer.layers[self.scribble_layer_name].brush_size = self._scribble_brush_size
 
+    def on_reset_all(self, *args, **kwargs):
+        """Reset the plugin to initial state and close all layers, preserving object names"""
+        if self.session is not None:
+            self.session.reset_interactions()
+            self.session = None
+            
+        # Call the parent implementation to handle UI reset and layer closing
+        super().on_reset_all(*args, **kwargs)
+
     # Inference Behaviour
 
     def add_interaction(self):

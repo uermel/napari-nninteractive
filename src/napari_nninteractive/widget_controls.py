@@ -572,6 +572,10 @@ class LayerControls(BaseGUI):
                     except Exception as e:
                         from napari.utils.notifications import show_warning
                         show_warning(f"Error exporting OME-Zarr file: {str(e)}")
+            
+            # Check if reset after export is enabled
+            if hasattr(self, 'reset_after_export_ckbx') and self.reset_after_export_ckbx.isChecked():
+                self.on_reset_all()
 
     def on_object_name_selected(self, text=None, *args, **kwargs) -> None:
         """
