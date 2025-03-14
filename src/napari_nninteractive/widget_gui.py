@@ -85,12 +85,14 @@ class BaseGUI(QWidget):
         self.init_button.setEnabled(True)
 
         self.reset_button.setEnabled(False)
+        self.reset_all_button.setEnabled(True)  # Reset All should always be enabled
         self.prompt_button.setEnabled(False)
         self.interaction_button.setEnabled(False)
         self.run_button.setEnabled(False)
         self.run_ckbx.setEnabled(False)
         self.export_button.setEnabled(False)
         self.separate_omezarr_ckbx.setEnabled(False)
+        self.reset_after_export_ckbx.setEnabled(False)
         self.reset_interaction_button.setEnabled(False)
         self.propagate_ckbx.setEnabled(False)
         self.label_for_init.setEnabled(False)
@@ -108,12 +110,14 @@ class BaseGUI(QWidget):
         self.init_button.setEnabled(False)
 
         self.reset_button.setEnabled(True)
+        self.reset_all_button.setEnabled(True)  # Reset All should always be enabled
         self.prompt_button.setEnabled(True)
         self.interaction_button.setEnabled(True)
         self.run_button.setEnabled(True)
         self.run_ckbx.setEnabled(True)
         self.export_button.setEnabled(True)
         self.separate_omezarr_ckbx.setEnabled(True)
+        self.reset_after_export_ckbx.setEnabled(True)
         self.reset_interaction_button.setEnabled(True)
         self.propagate_ckbx.setEnabled(True)
         self.label_for_init.setEnabled(True)
@@ -200,6 +204,16 @@ class BaseGUI(QWidget):
             self.on_next,
             tooltips="Keep current segmentation and go to the next object - press M",
             shortcut="M",
+        )
+        
+        # Add Reset All button
+        self.reset_all_button = setup_iconbutton(
+            _layout,
+            "Reset All",
+            "delete_shape",
+            self._viewer.theme,
+            self.on_reset_all,
+            tooltips="Reset the plugin to initial state and close all layers",
         )
         
         # Add object naming dropdown
@@ -374,6 +388,14 @@ class BaseGUI(QWidget):
             tooltips="When checked, export ONLY as OME-Zarr files. When unchecked, export in original format."
         )
         
+        # Add a checkbox to reset after export
+        self.reset_after_export_ckbx = setup_checkbox(
+            _layout,
+            "Reset all after export",
+            False,
+            tooltips="When checked, reset the plugin to initial state and close all layers after export"
+        )
+        
         _group_box.setLayout(_layout)
         return _group_box
 
@@ -449,3 +471,32 @@ class BaseGUI(QWidget):
 
     def _export(self) -> None:
         """Placeholder method for exporting all generated label layers"""
+
+    def on_reset_all(self, *args, **kwargs):
+        """
+        Reset the plugin to its initial state but preserve object names.
+        Closes all layers in the viewer.
+        """
+        # Save object names before reset
+        saved_object_names = self.object_names.copy()
+        
+        # Reset session
+        self._clear_layers()
+        self._unlock_session()
+        
+        # Close all layers in the viewer
+        layer_names = list(self._viewer.layers.copy())
+        for layer in layer_names:
+            self._viewer.layers.remove(layer)
+        
+        # Restore object names
+        self.object_names = saved_object_names
+        self.object_name_combo.clear()
+        self.object_name_combo.addItems(self.object_names)
+        
+        # Reset session
+        self.session_cfg = None
+        
+        # Set prompt back to positive
+        self.prompt_button._uncheck()
+        self.prompt_button._check(0)
