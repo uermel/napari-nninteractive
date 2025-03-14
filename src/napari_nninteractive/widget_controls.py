@@ -424,10 +424,18 @@ class LayerControls(BaseGUI):
         When the 'Export as separate OME-Zarr files' option is checked (default), 
         exports ONLY as OME-Zarr files. When unchecked, exports in the original format."""
         _img_layer = self._viewer.layers[self.session_cfg["name"]]
-        _img_file = Path(_img_layer.source.path).name
-        _dtype = ".nii.gz" if str(_img_file).endswith(".nii.gz") else Path(_img_file).suffix
-        _output_file = _img_file.replace(_dtype, "")
-
+        
+        # Handle cases where the image might not have a source path
+        if hasattr(_img_layer, 'source') and hasattr(_img_layer.source, 'path') and _img_layer.source.path is not None:
+            _img_file = Path(_img_layer.source.path).name
+            _dtype = ".nii.gz" if str(_img_file).endswith(".nii.gz") else Path(_img_file).suffix
+            _output_file = _img_file.replace(_dtype, "")
+        else:
+            # Use the layer name as the filename if no source path is available
+            _img_file = f"{_img_layer.name}"
+            _output_file = _img_file
+            _dtype = ""
+            
         _dialog = QFileDialog(self)
         _dialog.setDirectory(os.getcwd())
 
@@ -500,7 +508,11 @@ class LayerControls(BaseGUI):
                         affine=self.session_cfg["affine_source"],
                         metadata=self.session_cfg["metadata"],
                     )
-                    _layer_temp._source = self.session_cfg["source"]
+                    
+                    # Handle source property for save operation
+                    if hasattr(_img_layer, 'source') and _img_layer.source is not None:
+                        _layer_temp._source = self.session_cfg["source"]
+                    
                     _layer_temp.save(_file)
                     del _layer_temp
                 
