@@ -10,6 +10,7 @@ from batchgenerators.utilities.file_and_folder_operations import join, load_json
 from napari.viewer import Viewer
 from nnunetv2.utilities.find_class_by_name import recursive_find_python_class
 from qtpy.QtWidgets import QWidget
+from qtpy.QtCore import QTimer
 
 from napari_nninteractive.widget_controls import LayerControls
 
@@ -136,15 +137,88 @@ class nnInteractiveWidget(LayerControls):
     def on_propagate_ckbx(self, *args, **kwargs):
         if self.session is not None:
             self.session.set_do_autozoom(self.propagate_ckbx.isChecked())
+            
+    def on_center_on_labels_ckbx(self, *args, **kwargs):
+        """Toggle whether to center the camera on labels when changing axes"""
+        # No need for implementation here, just used as a flag
 
     def on_axis_change(self, event: Any):
-        """Change the brush size of the scribble layer when the axis changes"""
+        """Handle axis change event - adjust brush size and potentially center view on labels"""
         if self.session is not None:
+            # Update scribble brush size
             self._scribble_brush_size = self.session.preferred_scribble_thickness[
                 self._viewer.dims.not_displayed[0]
             ]
             if self.scribble_layer_name in self._viewer.layers:
                 self._viewer.layers[self.scribble_layer_name].brush_size = self._scribble_brush_size
+                
+            # Center on labels if enabled - use a short timer to ensure axis change is complete
+            if hasattr(self, 'center_on_labels_ckbx') and self.center_on_labels_ckbx.isChecked():
+                # Use Qt timer for a short delay to ensure the axis change is complete
+                QTimer.singleShot(50, self._center_on_labels)
+
+    def _center_on_labels(self):
+        """Center the camera view on the center of mass of current label layer"""
+        if self.label_layer_name in self._viewer.layers:
+            label_layer = self._viewer.layers[self.label_layer_name]
+            label_data = label_layer.data
+            
+            # Only center if there are actually labels
+            if not np.any(label_data > 0):
+                return
+                
+            # Get indices where label data is non-zero
+            indices = np.where(label_data > 0)
+            
+            if not indices or len(indices[0]) == 0:
+                return
+            
+            # Calculate center of mass (mean position of all labeled voxels)
+            center_of_mass = np.array([np.mean(dim_indices) for dim_indices in indices])
+            
+            # Calculate bounding box of the labeled region
+            min_coords = np.array([np.min(indices[i]) for i in range(len(indices))])
+            max_coords = np.array([np.max(indices[i]) for i in range(len(indices))])
+            
+            # Get current view dimensions
+            ndim = label_data.ndim
+            displayed_dims = list(self._viewer.dims.displayed)
+            not_displayed = list(self._viewer.dims.not_displayed)
+            
+            # For non-displayed dimensions, set slice to the center of mass
+            current_step = list(self._viewer.dims.current_step)
+            for dim in not_displayed:
+                if dim < ndim:
+                    current_step[dim] = int(center_of_mass[dim])
+            
+            # Update the viewer position for non-displayed dimensions
+            self._viewer.dims.current_step = tuple(current_step)
+            
+            # Center the camera on the center of mass for displayed dimensions
+            displayed_center = np.array([center_of_mass[dim] for dim in displayed_dims])
+            
+            # Set the center explicitly (this works for both 2D and 3D)
+            self._viewer.camera.center = displayed_center
+            
+            # Calculate the size of the bounding box in displayed dimensions
+            if displayed_dims:
+                # Get dimensions of the bounding box in displayed dimensions
+                bbox_sizes = []
+                for dim in displayed_dims:
+                    if dim < len(min_coords):
+                        size = max_coords[dim] - min_coords[dim] + 1
+                        # Get the scale (pixel size) for this dimension
+                        scale = label_layer.scale[dim] if dim < len(label_layer.scale) else 1.0
+                        bbox_sizes.append(size * scale)
+                
+                if bbox_sizes:
+                    # Add 20% padding around the bounding box
+                    max_size = max(bbox_sizes) * 1.4
+                    
+                    # Set a reasonable zoom factor based on the bounding box size
+                    # Use a fallback approach that doesn't depend on canvas.size()
+                    if max_size > 0:
+                        self._viewer.camera.zoom = 800 / max_size
 
     def on_reset_all(self, *args, **kwargs):
         """Reset the plugin to initial state and close all layers, preserving object names"""

@@ -95,6 +95,7 @@ class BaseGUI(QWidget):
         self.reset_after_export_ckbx.setEnabled(False)
         self.reset_interaction_button.setEnabled(False)
         self.propagate_ckbx.setEnabled(False)
+        self.center_on_labels_ckbx.setEnabled(False)
         self.label_for_init.setEnabled(False)
         self.class_for_init.setEnabled(False)
         self.auto_refine.setEnabled(False)
@@ -120,6 +121,7 @@ class BaseGUI(QWidget):
         self.reset_after_export_ckbx.setEnabled(True)
         self.reset_interaction_button.setEnabled(True)
         self.propagate_ckbx.setEnabled(True)
+        self.center_on_labels_ckbx.setEnabled(True)
         self.label_for_init.setEnabled(True)
         self.class_for_init.setEnabled(True)
         self.auto_refine.setEnabled(True)
@@ -316,11 +318,22 @@ class BaseGUI(QWidget):
         setup_icon(self.interaction_button.buttons[2], "paint", theme=self._viewer.theme)
         setup_icon(self.interaction_button.buttons[3], "polygon_lasso", theme=self._viewer.theme)
 
+        # Create horizontal layout for the checkboxes
+        checkbox_layout = QHBoxLayout()
+        _layout.addLayout(checkbox_layout)
+
         self.propagate_ckbx = setup_checkbox(
-            _layout,
+            checkbox_layout,
             "Auto-zoom",
             True,
             function=self.on_propagate_ckbx,
+        )
+        
+        self.center_on_labels_ckbx = setup_checkbox(
+            checkbox_layout,
+            "autocenter",
+            True,
+            function=self.on_center_on_labels_ckbx,
         )
 
         for i, shortcut in enumerate(["P", "B", "S", "L"]):
@@ -436,7 +449,12 @@ class BaseGUI(QWidget):
         print("on_run")
 
     def on_propagate_ckbx(self, *args, **kwargs):
-        print("on_propagate_ckbx", *args, **kwargs)
+        """Handle changes to the auto-zoom checkbox."""
+        pass
+        
+    def on_center_on_labels_ckbx(self, *args, **kwargs):
+        """Handle changes to the center on labels checkbox."""
+        pass
 
     def on_load_mask(self):
         pass
