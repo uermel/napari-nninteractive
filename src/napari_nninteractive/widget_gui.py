@@ -213,10 +213,11 @@ class BaseGUI(QWidget):
             h_layout, 
             self.object_names, 
             self.on_object_name_selected,
-            editable=True,
             stretch=5,
             tooltips="Select or enter a name for the current object"
         )
+        # Make the combobox editable after creation
+        self.object_name_combo.setEditable(True)
         
         # Add button to add the current name to the dropdown list
         self.add_name_button = setup_iconbutton(
