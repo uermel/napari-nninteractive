@@ -209,15 +209,12 @@ class BaseGUI(QWidget):
         name_label = setup_label(h_layout, "Object Name:", stretch=2)
         name_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
         
-        self.object_name_combo = setup_combobox(
-            h_layout, 
-            self.object_names, 
-            self.on_object_name_selected,
-            stretch=5
-        )
-        # Make the combobox editable after creation
+        self.object_name_combo = QComboBox()
+        self.object_name_combo.addItems(self.object_names)
         self.object_name_combo.setEditable(True)
         self.object_name_combo.setToolTip("Select or enter a name for the current object")
+        self.object_name_combo.currentTextChanged.connect(self.on_object_name_selected)
+        h_layout.addWidget(self.object_name_combo, stretch=5)
         
         # Add button to add the current name to the dropdown list
         self.add_name_button = setup_iconbutton(
@@ -425,9 +422,11 @@ class BaseGUI(QWidget):
     def add_mask_init_layer(self):
         pass
         
-    def on_object_name_selected(self, *args, **kwargs) -> None:
+    def on_object_name_selected(self, text=None, *args, **kwargs) -> None:
         """Called when a new object name is selected from the dropdown."""
-        print("on_object_name_selected", self.object_name_combo.currentText())
+        # If text is provided by the signal, use it, otherwise get from combobox
+        object_name = text if text is not None else self.object_name_combo.currentText()
+        print("on_object_name_selected", object_name)
         
     def on_add_object_name(self, *args, **kwargs) -> None:
         """Add the current text in the combobox to the list of names if it's not already present."""
@@ -445,8 +444,8 @@ class BaseGUI(QWidget):
             if index >= 0:
                 self.object_name_combo.setCurrentIndex(index)
                 
-            # Update the current object's name
-            self.on_object_name_selected()
+            # Update the current object's name with the selected text
+            self.on_object_name_selected(current_text)
 
     def _export(self) -> None:
         """Placeholder method for exporting all generated label layers"""

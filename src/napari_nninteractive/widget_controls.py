@@ -566,12 +566,13 @@ class LayerControls(BaseGUI):
         else:
             raise ValueError("Output path has to be a directory, not a file")
 
-    def on_object_name_selected(self, *args, **kwargs) -> None:
+    def on_object_name_selected(self, text=None, *args, **kwargs) -> None:
         """
         Updates the name of the current label layer when a new object name is selected.
         """
         if self.label_layer_name in self._viewer.layers:
-            object_name = self.object_name_combo.currentText().strip()
+            # If text is provided by the signal, use it, otherwise get from combobox
+            object_name = text if text is not None else self.object_name_combo.currentText().strip()
             
             # Get the current layer's name
             current_layer = self._viewer.layers[self.label_layer_name]
