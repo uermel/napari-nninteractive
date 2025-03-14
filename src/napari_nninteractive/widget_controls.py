@@ -415,7 +415,8 @@ class LayerControls(BaseGUI):
 
     def _export(self) -> None:
         """Export all Label layers belonging to the current image & model pair as separate files
-        using the napari plugins"""
+        using the napari plugins. When separate_omezarr_ckbx is checked, each segmentation is also exported 
+        as a separate OME-Zarr file."""
         _img_layer = self._viewer.layers[self.session_cfg["name"]]
         _img_file = Path(_img_layer.source.path).name
         _dtype = ".nii.gz" if str(_img_file).endswith(".nii.gz") else Path(_img_file).suffix
@@ -436,6 +437,9 @@ class LayerControls(BaseGUI):
         elif Path(_output_dir).is_dir():
             _output_dir = Path(_output_dir).joinpath(f"{_output_file}_nnInteractive")
             Path(_output_dir).mkdir(exist_ok=True)
+
+            # Check if we should export as separate OME-Zarr files
+            export_as_omezarr = self.separate_omezarr_ckbx.isChecked()
 
             for _layer in self._viewer.layers:
                 if self.label_layer_name == _layer.name:
@@ -471,6 +475,67 @@ class LayerControls(BaseGUI):
 
                 _layer_temp._source = self.session_cfg["source"]
                 _layer_temp.save(_file)
+                
+                # If separate OME-Zarr export is enabled, export each object as a separate OME-Zarr file
+                if export_as_omezarr:
+                    try:
+                        import zarr
+                        import numpy as np
+                        
+                        # Create a binary mask for the current object (all non-zero values are set to 1)
+                        binary_mask = (_data > 0).astype(np.uint8)
+                        
+                        # Create OME-Zarr file path
+                        _zarr_file_name = f"{_output_file}_{str(_index).zfill(4)}.zarr"
+                        _zarr_path = Path(_output_dir).joinpath(_zarr_file_name)
+                        
+                        # Create the zarr store
+                        store = zarr.DirectoryStore(str(_zarr_path))
+                        root = zarr.group(store=store, overwrite=True)
+                        
+                        # Save the binary mask to the OME-Zarr file
+                        # Create a dataset with appropriate chunks for the mask data
+                        chunk_size = (128, 128, 128) if len(binary_mask.shape) == 3 else (128, 128)
+                        mask_dataset = root.create_dataset(
+                            'labels/segmentation',
+                            data=binary_mask,
+                            chunks=chunk_size,
+                            dtype=np.uint8
+                        )
+                        
+                        # Add OME-Zarr metadata
+                        root.attrs['omero'] = {
+                            'name': f'Object {_index} - {self.session_cfg["name"]}',
+                            'version': '0.5'
+                        }
+                        
+                        # Add coordinate metadata
+                        multiscales = [{
+                            'version': '0.5',
+                            'axes': [
+                                {'name': 'z', 'type': 'space'} if len(binary_mask.shape) == 3 else None,
+                                {'name': 'y', 'type': 'space'},
+                                {'name': 'x', 'type': 'space'}
+                            ],
+                            'datasets': [{'path': 'labels/segmentation'}],
+                            'name': f'Object {_index}'
+                        }]
+                        # Remove None elements if 2D
+                        if len(binary_mask.shape) == 2:
+                            multiscales[0]['axes'] = [axis for axis in multiscales[0]['axes'] if axis is not None]
+                            
+                        root.attrs['multiscales'] = multiscales
+                        
+                    except ImportError:
+                        from napari.utils.notifications import show_warning
+                        show_warning(
+                            "Cannot export as OME-Zarr: zarr package is not installed. "
+                            "Install it with 'pip install zarr'."
+                        )
+                    except Exception as e:
+                        from napari.utils.notifications import show_warning
+                        show_warning(f"Error exporting OME-Zarr file: {str(e)}")
+
                 del _layer_temp
         else:
             raise ValueError("Output path has to be a directory, not a file")
