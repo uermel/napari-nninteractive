@@ -489,15 +489,14 @@ class LayerControls(BaseGUI):
                         _zarr_file_name = f"{_output_file}_{str(_index).zfill(4)}.zarr"
                         _zarr_path = Path(_output_dir).joinpath(_zarr_file_name)
                         
-                        # Create the zarr store
-                        store = zarr.DirectoryStore(str(_zarr_path))
-                        root = zarr.group(store=store, overwrite=True)
+                        # Create the zarr store with proper OME-Zarr v0.4 structure
+                        root = zarr.open(str(_zarr_path), mode='w')
                         
-                        # Save the binary mask to the OME-Zarr file
-                        # Create a dataset with appropriate chunks for the mask data
+                        # Save the binary mask directly at the root level as "labels" array
+                        # napari expects the data at this level
                         chunk_size = (128, 128, 128) if len(binary_mask.shape) == 3 else (128, 128)
                         mask_dataset = root.create_dataset(
-                            'labels/segmentation',
+                            '0',  # Use '0' as the main image dataset name
                             data=binary_mask,
                             chunks=chunk_size,
                             dtype=np.uint8
@@ -506,24 +505,30 @@ class LayerControls(BaseGUI):
                         # Add OME-Zarr metadata
                         root.attrs['omero'] = {
                             'name': f'Object {_index} - {self.session_cfg["name"]}',
-                            'version': '0.5'
+                            'version': '0.4'  # Use a stable version
                         }
                         
                         # Add coordinate metadata
-                        multiscales = [{
-                            'version': '0.5',
-                            'axes': [
-                                {'name': 'z', 'type': 'space'} if len(binary_mask.shape) == 3 else None,
+                        axes = []
+                        if len(binary_mask.shape) == 3:
+                            axes = [
+                                {'name': 'z', 'type': 'space'},
                                 {'name': 'y', 'type': 'space'},
                                 {'name': 'x', 'type': 'space'}
-                            ],
-                            'datasets': [{'path': 'labels/segmentation'}],
-                            'name': f'Object {_index}'
-                        }]
-                        # Remove None elements if 2D
-                        if len(binary_mask.shape) == 2:
-                            multiscales[0]['axes'] = [axis for axis in multiscales[0]['axes'] if axis is not None]
+                            ]
+                        else:
+                            axes = [
+                                {'name': 'y', 'type': 'space'},
+                                {'name': 'x', 'type': 'space'}
+                            ]
                             
+                        multiscales = [{
+                            'version': '0.4',
+                            'name': f'Object {_index}',
+                            'axes': axes,
+                            'datasets': [{'path': '0'}]
+                        }]
+                        
                         root.attrs['multiscales'] = multiscales
                         
                     except ImportError:
