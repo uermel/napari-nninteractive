@@ -7,6 +7,7 @@ import nnInteractive
 import numpy as np
 import torch
 from batchgenerators.utilities.file_and_folder_operations import join, load_json
+from napari.utils.notifications import show_warning
 from napari.viewer import Viewer
 from nnunetv2.utilities.find_class_by_name import recursive_find_python_class
 from qtpy.QtWidgets import QWidget
@@ -59,9 +60,22 @@ class nnInteractiveWidget(LayerControls):
                 "nnInteractive.inference",
             )
 
+            # CPU Fallback if noc Cuda is available
+            if torch.cuda.is_available():
+                device = torch.device("cuda:0")
+            else:
+                show_warning(
+                    "Cuda is not available. Using CPU instead. This will result in longer runtimes and additionally auto-zoom will be disabled for runtime reasons"
+                )
+
+                device = torch.device("cpu")
+                self.propagate_ckbx.setChecked(False)
+
+            # device = torch.device("cuda:0") if torch.cuda.is_available() else torch.device("cpu")
+
             # Initialize the Session
             self.session = inference_class(
-                device=torch.device("cuda:0"),  # can also be cpu or mps. CPU not recommended
+                device=device,  # can also be cpu or mps. CPU not recommended
                 use_torch_compile=False,
                 torch_n_threads=os.cpu_count(),
                 verbose=False,
@@ -74,10 +88,10 @@ class nnInteractiveWidget(LayerControls):
                 "checkpoint_final.pth",
             )
 
-        _data = self._viewer.layers[self.session_cfg["name"]].data
+        _data = np.array(self._viewer.layers[self.session_cfg["name"]].data)
         _data = _data[np.newaxis, ...]
 
-        if self.session_cfg["ndim_source"] == 2:
+        if self.source_cfg["ndim"] == 2:
             _data = _data[np.newaxis, ...]
 
         self.session.set_image(_data, {"spacing": self.session_cfg["spacing"]})
@@ -276,7 +290,9 @@ class nnInteractiveWidget(LayerControls):
 
         if np.any(data):
             if self.session is not None:
-                self.session.add_initial_seg_interaction(data.astype(np.uint8), run_prediction=self.auto_refine.isChecked())
+                self.session.add_initial_seg_interaction(
+                    data.astype(np.uint8), run_prediction=self.auto_refine.isChecked()
+                )
                 self._viewer.layers[self.label_layer_name].refresh()
         else:
             warnings.warn("Mask is not valid - probably its empty", UserWarning, stacklevel=1)
