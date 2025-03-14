@@ -60,7 +60,7 @@ class nnInteractiveWidget(LayerControls):
             )
 
             # CPU Fallback if noc Cuda is available
-            if torch.cuda.is_available() and False:
+            if torch.cuda.is_available():
                 device = torch.device("cuda:0")
             else:
                 show_warning(
