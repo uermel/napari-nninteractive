@@ -283,9 +283,10 @@ class LayerControls(BaseGUI):
                 scale=self.source_cfg["affine"].scale, translate=self.source_cfg["affine"].translate
             )
             # 2. Apply to Image Layer
-            _step = self._viewer.dims.current_step
+            # _step = self._viewer.dims.current_step
             image_layer.affine = self.session_cfg["affine"]
-            self._viewer.dims.current_step = _step
+            self._viewer.reset_view()
+            # self._viewer.dims.current_step = _step
 
         # 1. Non - Othogonal Transforms
         # dummy affine to check if transforms are non-orthogonal
@@ -312,10 +313,11 @@ class LayerControls(BaseGUI):
             self.session_cfg["shear"] = np.zeros(self.source_cfg["ndim"])
 
             # 2. Apply to Image Layer
-            _step = self._viewer.dims.current_step
+            # _step = self._viewer.dims.current_step
             image_layer.rotate = self.session_cfg["rotate"]
             image_layer.shear = self.session_cfg["shear"]
-            self._viewer.dims.current_step = _step
+            self._viewer.reset_view()
+            # self._viewer.dims.current_step = _step
 
         # 2. Convert 2D Data to dummy 3D Data
         if self.source_cfg["ndim"] == 2:
