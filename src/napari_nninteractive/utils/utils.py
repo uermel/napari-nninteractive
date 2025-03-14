@@ -37,9 +37,27 @@ class ColorMapper:
 def determine_layer_index(names, prefix, postfix) -> str:
     """
     Determines the index assigned to the next layer.
+    Handles layer names with format: "object X" or "object X (object_name)"
     """
     names = [name for name in names if name.startswith(prefix) and name.endswith(postfix)]
-    names = [int(name.replace(prefix, "").replace(postfix, "")) for name in names]
+    
+    indices = []
+    for name in names:
+        # Remove prefix and postfix
+        middle_part = name.replace(prefix, "").replace(postfix, "")
+        
+        # Check if there's an object name in parentheses
+        if " (" in middle_part and ")" in middle_part:
+            # Extract just the number part before the parentheses
+            number_part = middle_part.split(" (")[0].strip()
+        else:
+            number_part = middle_part.strip()
+            
+        try:
+            indices.append(int(number_part))
+        except ValueError:
+            # If we can't convert to int, skip this name
+            continue
 
-    _index = max(names) + 1 if names != [] else 0
+    _index = max(indices) + 1 if indices else 0
     return _index

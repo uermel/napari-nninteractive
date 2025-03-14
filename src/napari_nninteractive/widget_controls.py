@@ -466,13 +466,21 @@ class LayerControls(BaseGUI):
                     layer_name_part = _layer.name.replace(f" - {self.session_cfg['name']}", "")
                     # Check if there's an object name in parentheses
                     if " (" in layer_name_part and ")" in layer_name_part:
-                        base_part = layer_name_part.split(" (")[0]
+                        base_part = layer_name_part.split(" (")[0].strip()
                         name_part = layer_name_part.split(" (")[1].split(")")[0]
-                        _index = int(base_part.replace("object ", ""))
-                        object_name = name_part
+                        try:
+                            _index = int(base_part.replace("object ", ""))
+                            object_name = name_part
+                        except ValueError:
+                            # If we can't convert to int, skip this layer
+                            continue
                     else:
-                        _index = int(layer_name_part.replace("object ", ""))
-                        object_name = ""
+                        try:
+                            _index = int(layer_name_part.replace("object ", ""))
+                            object_name = ""
+                        except ValueError:
+                            # If we can't convert to int, skip this layer
+                            continue
                 else:
                     continue
 
@@ -585,10 +593,10 @@ class LayerControls(BaseGUI):
             layer_name_part = current_layer.name.replace(f" - {self.session_cfg['name']}", "")
             
             # Extract the base part (with "object" and the index)
-            if " (" in layer_name_part:
-                base_part = layer_name_part.split(" (")[0]
+            if " (" in layer_name_part and ")" in layer_name_part:
+                base_part = layer_name_part.split(" (")[0].strip()
             else:
-                base_part = layer_name_part
+                base_part = layer_name_part.strip()
                 
             # Create the new name with or without the object name
             if object_name:
