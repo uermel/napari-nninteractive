@@ -369,9 +369,9 @@ class BaseGUI(QWidget):
         # Add a checkbox to toggle separate OME-Zarr file export
         self.separate_omezarr_ckbx = setup_checkbox(
             _layout,
-            "Export as separate OME-Zarr files",
-            False,
-            tooltips="Export each segmented object to a separate OME-Zarr file"
+            "Use OME-Zarr format (recommended)",
+            True,
+            tooltips="When checked, export ONLY as OME-Zarr files. When unchecked, export in original format."
         )
         
         _group_box.setLayout(_layout)
