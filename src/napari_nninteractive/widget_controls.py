@@ -420,9 +420,9 @@ class LayerControls(BaseGUI):
         )
 
     def _export(self) -> None:
-        """Export all Label layers belonging to the current image & model pair as separate files
-        using the napari plugins. When separate_omezarr_ckbx is checked, each segmentation is also exported 
-        as a separate OME-Zarr file."""
+        """Export all Label layers belonging to the current image & model pair.
+        When the 'Export as separate OME-Zarr files' option is checked (default), 
+        exports ONLY as OME-Zarr files. When unchecked, exports in the original format."""
         _img_layer = self._viewer.layers[self.session_cfg["name"]]
         _img_file = Path(_img_layer.source.path).name
         _dtype = ".nii.gz" if str(_img_file).endswith(".nii.gz") else Path(_img_file).suffix
@@ -485,22 +485,26 @@ class LayerControls(BaseGUI):
 
                 # Add object name to filename if it exists
                 name_suffix = f"_{object_name}" if object_name else ""
-                _file_name = f"{_output_file}_{str(_index).zfill(4)}{name_suffix}{_dtype}"
-                _file = str(Path(_output_dir).joinpath(_file_name))
-
+                
                 # reverse the corrections for non-orthogonal data and convert dummy 3d back to 2d
                 _data = _layer.data[0] if self.session_cfg["ndim_source"] == 2 else _layer.data
-                _layer_temp = Labels(
-                    _data,
-                    name="_temp",
-                    affine=self.session_cfg["affine_source"],
-                    metadata=self.session_cfg["metadata"],
-                )
-
-                _layer_temp._source = self.session_cfg["source"]
-                _layer_temp.save(_file)
                 
-                # If separate OME-Zarr export is enabled, export each object as a separate OME-Zarr file
+                # Save in original format only if zarr export is not enabled
+                if not export_as_omezarr:
+                    _file_name = f"{_output_file}_{str(_index).zfill(4)}{name_suffix}{_dtype}"
+                    _file = str(Path(_output_dir).joinpath(_file_name))
+                    
+                    _layer_temp = Labels(
+                        _data,
+                        name="_temp",
+                        affine=self.session_cfg["affine_source"],
+                        metadata=self.session_cfg["metadata"],
+                    )
+                    _layer_temp._source = self.session_cfg["source"]
+                    _layer_temp.save(_file)
+                    del _layer_temp
+                
+                # If OME-Zarr export is enabled, export each object as a separate OME-Zarr file
                 if export_as_omezarr:
                     try:
                         import zarr
@@ -568,10 +572,6 @@ class LayerControls(BaseGUI):
                     except Exception as e:
                         from napari.utils.notifications import show_warning
                         show_warning(f"Error exporting OME-Zarr file: {str(e)}")
-
-                del _layer_temp
-        else:
-            raise ValueError("Output path has to be a directory, not a file")
 
     def on_object_name_selected(self, text=None, *args, **kwargs) -> None:
         """
