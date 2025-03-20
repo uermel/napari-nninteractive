@@ -21,6 +21,7 @@ from napari_nninteractive.layers.bbox_layer import BBoxLayer
 from napari_nninteractive.layers.lasso_layer import LassoLayer
 from napari_nninteractive.layers.point_layer import SinglePointLayer
 from napari_nninteractive.layers.scribble_layer import ScribbleLayer
+from napari_nninteractive.utils.affine import is_orthogonal
 from napari_nninteractive.utils.utils import ColorMapper, determine_layer_index
 from napari_nninteractive.widget_gui import BaseGUI
 
@@ -54,9 +55,10 @@ class LayerControls(BaseGUI):
         }
 
         self.label_layer_name = "nnInteractive - Label Layer"
-        self.mask_init_layer_name = "nnInteractive - Initial Mask Layer"
+        self.semantic_layer_name = "nnInteractive - Label Layer"
         self.colormap = ColorMapper(49, seed=0.5, background_value=0)
         self._scribble_brush_size = 5
+        self.object_index = 0
 
         self._viewer.layers.selection.events.active.connect(self.on_layer_selected)
 
@@ -143,41 +145,30 @@ class LayerControls(BaseGUI):
         lasso_layer.events.data.connect(self.on_interaction)
         self._viewer.add_layer(lasso_layer)
 
-    def add_label_layer(self) -> None:
+    def add_label_layer(self, data, name) -> None:
         """
         Check if a layer with the layer_name already exists. If yes rename this by adding an index
         and afterward create the layer
         :return:
         :rtype:
         """
-        if self.label_layer_name in self._viewer.layers:
-            _index = determine_layer_index(
-                names=[layer.name for layer in self._viewer.layers if isinstance(layer, Labels)],
-                prefix="object ",
-                postfix=f" - {self.session_cfg['name']}",
-            )
-            _layer = self._viewer.layers[self.label_layer_name]
-            _layer.name = f"object {_index} - {self.session_cfg['name']}"
-            _layer.data = _layer.data.copy()
-            _index += 1
-        else:
-            _index = 0
 
-        _layer_res = Labels(
-            self._data_result,
-            name=self.label_layer_name,
+        label_layer = Labels(
+            data,
+            # self._data_result,
+            name=name,
             opacity=0.3,
             affine=self.session_cfg["affine"],
             scale=self.session_cfg["scale"],
             translate=self.session_cfg["translate"],
             rotate=self.session_cfg["rotate"],
             shear=self.session_cfg["shear"],
-            colormap=self.colormap[_index],
+            # colormap=self.colormap[index],
             metadata=self.session_cfg["metadata"],
         )
-        _layer_res._source = self.session_cfg["source"]
+        label_layer._source = self.session_cfg["source"]
 
-        self._viewer.add_layer(_layer_res)
+        self._viewer.add_layer(label_layer)
 
     def add_mask_init_layer(self) -> None:
         """
@@ -263,8 +254,6 @@ class LayerControls(BaseGUI):
 
         self.session_cfg = self.source_cfg.copy()
 
-        from napari_nninteractive.utils.affine import is_orthogonal
-
         # 1. Non - Othogonal Affine
         if not (
             is_orthogonal(
@@ -283,10 +272,8 @@ class LayerControls(BaseGUI):
                 scale=self.source_cfg["affine"].scale, translate=self.source_cfg["affine"].translate
             )
             # 2. Apply to Image Layer
-            # _step = self._viewer.dims.current_step
             image_layer.affine = self.session_cfg["affine"]
             self._viewer.reset_view()
-            # self._viewer.dims.current_step = _step
 
         # 1. Non - Othogonal Transforms
         # dummy affine to check if transforms are non-orthogonal
@@ -313,15 +300,12 @@ class LayerControls(BaseGUI):
             self.session_cfg["shear"] = np.zeros(self.source_cfg["ndim"])
 
             # 2. Apply to Image Layer
-            # _step = self._viewer.dims.current_step
             image_layer.rotate = self.session_cfg["rotate"]
             image_layer.shear = self.session_cfg["shear"]
             self._viewer.reset_view()
-            # self._viewer.dims.current_step = _step
 
         # 2. Convert 2D Data to dummy 3D Data
         if self.source_cfg["ndim"] == 2:
-            print("Displaying 2D image")
             self.session_cfg["ndim"] = 3
             self.session_cfg["shape"] = np.insert(self.session_cfg["shape"], 0, 1)
 
@@ -345,7 +329,10 @@ class LayerControls(BaseGUI):
         self._data_result = np.zeros(self.session_cfg["shape"], dtype=np.uint8)
 
         # Add Layer
-        self.add_label_layer()
+        self.object_index = 0
+        if self.label_layer_name in self._viewer.layers:
+            self._viewer.layers.remove(self.label_layer_name)
+        self.add_label_layer(self._data_result, self.label_layer_name)
 
         # Lock the Session
         self._lock_session()
@@ -364,8 +351,26 @@ class LayerControls(BaseGUI):
         layers. A new label layer with an updated colormap is then added to the viewer.
         """
         # Rename the current layer and add a new one
-        self.add_label_layer()
-        # Clear all interaction layers
+        label_layer = self._viewer.layers[self.label_layer_name]
+        if self.instance_btn.isChecked():
+
+            _name = f"object {self.object_index+1} - {self.session_cfg['name']}"
+            self.add_label_layer(label_layer.data.copy(), _name)
+            self._viewer.layers[_name].colormap = self.colormap[self.object_index]
+
+        else:
+            _sem_name = f"semantic map - {self.session_cfg['name']}"
+            if _sem_name not in self._viewer.layers:
+                self.add_label_layer(np.zeros_like(label_layer.data), _sem_name)
+
+            sem_layer = self._viewer.layers[_sem_name]
+
+            sem_layer.data[label_layer.data == 1] = self.object_index + 1
+            sem_layer.refresh()
+
+        self.object_index += 1
+        label_layer.colormap = self.colormap[self.object_index]
+
         self._clear_layers()
         self.prompt_button._uncheck()
         self.prompt_button._check(0)
@@ -494,7 +499,7 @@ class LayerControls(BaseGUI):
             Path(_output_dir).mkdir(exist_ok=True)
 
             for _layer in self._viewer.layers:
-                if self.label_layer_name == _layer.name:
+                if self.label_layer_name == _layer.name and np.any(_layer.data):
                     _index = determine_layer_index(
                         names=[
                             layer.name for layer in self._viewer.layers if isinstance(layer, Labels)
@@ -502,6 +507,7 @@ class LayerControls(BaseGUI):
                         prefix="object ",
                         postfix=f" - {self.source_cfg['name']}",
                     )
+                    _file_name = f"{_output_file}_{str(_index).zfill(4)}{_dtype}"
                 elif _layer.name.startswith("object ") and _layer.name.endswith(
                     f" - {self.source_cfg['name']}"
                 ):
@@ -510,10 +516,14 @@ class LayerControls(BaseGUI):
                             f" - {self.source_cfg['name']}", ""
                         )
                     )
+                    _file_name = f"{_output_file}_{str(_index).zfill(4)}{_dtype}"
+                elif f"semantic map - {self.session_cfg['name']}" == _layer.name:
+                    _file_name = f"{_output_file}_semantic_map{_dtype}"
+
                 else:
                     continue
 
-                _file_name = f"{_output_file}_{str(_index).zfill(4)}{_dtype}"
+                # _file_name = f"{_output_file}_{str(_index).zfill(4)}{_dtype}"
                 _file = str(Path(_output_dir).joinpath(_file_name))
 
                 # reverse the corrections for non-orthogonal data and convert dummy 3d back to 2d
