@@ -352,7 +352,7 @@ class LayerControls(BaseGUI):
         """
         # Rename the current layer and add a new one
         label_layer = self._viewer.layers[self.label_layer_name]
-        if self.instance_btn.isChecked():
+        if not self.instance_aggregation_ckbx.isChecked():
 
             _name = f"object {self.object_index+1} - {self.session_cfg['name']}"
             self.add_label_layer(label_layer.data.copy(), _name)

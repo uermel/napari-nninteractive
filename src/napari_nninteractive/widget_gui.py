@@ -3,7 +3,6 @@ from typing import Optional
 from napari.layers import Image, Labels
 from napari.viewer import Viewer
 from napari_toolkit.containers import setup_vcollapsiblegroupbox, setup_vgroupbox, setup_vscrollarea
-from napari_toolkit.containers.boxlayout import hstack
 from napari_toolkit.widgets import (
     setup_acknowledgements,
     setup_checkbox,
@@ -13,7 +12,6 @@ from napari_toolkit.widgets import (
     setup_label,
     setup_layerselect,
     setup_lineedit,
-    setup_radiobutton,
     setup_spinbox,
     setup_vswitch,
 )
@@ -78,8 +76,7 @@ class BaseGUI(QWidget):
         self.init_button.setEnabled(True)
 
         self.reset_button.setEnabled(False)
-        self.instance_btn.setEnabled(False)
-        self.semantic_btn.setEnabled(False)
+        self.instance_aggregation_ckbx.setEnabled(False)
         self.prompt_button.setEnabled(False)
         self.interaction_button.setEnabled(False)
         self.run_button.setEnabled(False)
@@ -100,8 +97,7 @@ class BaseGUI(QWidget):
         self.init_button.setEnabled(False)
 
         self.reset_button.setEnabled(True)
-        self.instance_btn.setEnabled(True)
-        self.semantic_btn.setEnabled(True)
+        self.instance_aggregation_ckbx.setEnabled(True)
         self.prompt_button.setEnabled(True)
         self.interaction_button.setEnabled(True)
         self.run_button.setEnabled(True)
@@ -193,16 +189,13 @@ class BaseGUI(QWidget):
             shortcut="M",
         )
 
-        self.instance_btn = setup_radiobutton(
-            None, "Multi-Layer Mode", True, tooltips="Create a separate layer for each object."
-        )
-        self.semantic_btn = setup_radiobutton(
-            None,
-            "Index-Map Mode",
+        self.instance_aggregation_ckbx = setup_checkbox(
+            _layout,
+            "Instance Aggregation",
             False,
-            tooltips="Add all objects to a single layer. In the case of overlap newer objects overwrite older objects.",
+            tooltips="If checked: Add all objects to a single layer. In the case of overlap newer objects overwrite older objects.\n"
+            "Otherwise: Create a separate layer for each object. ",
         )
-        _ = hstack(_layout, [self.instance_btn, self.semantic_btn])
 
         _group_box.setLayout(_layout)
         return _group_box
