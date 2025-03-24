@@ -19,7 +19,6 @@ from napari_toolkit.widgets.buttons.icon_button import setup_icon
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QKeySequence
 from qtpy.QtWidgets import (
-    QComboBox,
     QGroupBox,
     QHBoxLayout,
     QShortcut,
@@ -125,7 +124,6 @@ class BaseGUI(QWidget):
         self.model_selection = setup_combobox(
             _layout, options=model_options, function=self.on_model_selected
         )
-        self.model_selection.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
 
         _boxlayout = QHBoxLayout()
         _layout.addLayout(_boxlayout)
@@ -152,7 +150,6 @@ class BaseGUI(QWidget):
         self.image_selection = setup_layerselect(
             _layout, viewer=self._viewer, layer_type=Image, function=self.on_image_selected
         )
-        self.image_selection.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
 
         _group_box.setLayout(_layout)
         return _group_box
