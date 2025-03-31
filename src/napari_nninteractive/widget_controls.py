@@ -21,6 +21,7 @@ from napari_nninteractive.layers.bbox_layer import BBoxLayer
 from napari_nninteractive.layers.lasso_layer import LassoLayer
 from napari_nninteractive.layers.point_layer import SinglePointLayer
 from napari_nninteractive.layers.scribble_layer import ScribbleLayer
+from napari_nninteractive.utils.affine import is_orthogonal
 from napari_nninteractive.utils.utils import ColorMapper, determine_layer_index
 from napari_nninteractive.widget_gui import BaseGUI
 
@@ -54,9 +55,10 @@ class LayerControls(BaseGUI):
         }
 
         self.label_layer_name = "nnInteractive - Label Layer"
-        self.mask_init_layer_name = "nnInteractive - Initial Mask Layer"
+        self.semantic_layer_name = "nnInteractive - Label Layer"
         self.colormap = ColorMapper(49, seed=0.5, background_value=0)
         self._scribble_brush_size = 5
+        self.object_index = 0
 
         self._viewer.layers.selection.events.active.connect(self.on_layer_selected)
 
@@ -271,8 +273,6 @@ class LayerControls(BaseGUI):
         self.session_cfg["ndim_source"] = self.source_cfg["ndim"]
         self.session_cfg["affine_source"] = self.source_cfg["affine"]
 
-        from napari_nninteractive.utils.affine import is_orthogonal
-
         # 1. Non - Othogonal Affine
         if not (
             is_orthogonal(
@@ -291,10 +291,8 @@ class LayerControls(BaseGUI):
                 scale=self.source_cfg["affine"].scale, translate=self.source_cfg["affine"].translate
             )
             # 2. Apply to Image Layer
-            # _step = self._viewer.dims.current_step
             image_layer.affine = self.session_cfg["affine"]
             self._viewer.reset_view()
-            # self._viewer.dims.current_step = _step
 
         # 1. Non - Othogonal Transforms
         # dummy affine to check if transforms are non-orthogonal
@@ -321,15 +319,12 @@ class LayerControls(BaseGUI):
             self.session_cfg["shear"] = np.zeros(self.source_cfg["ndim"])
 
             # 2. Apply to Image Layer
-            # _step = self._viewer.dims.current_step
             image_layer.rotate = self.session_cfg["rotate"]
             image_layer.shear = self.session_cfg["shear"]
             self._viewer.reset_view()
-            # self._viewer.dims.current_step = _step
 
         # 2. Convert 2D Data to dummy 3D Data
         if self.source_cfg["ndim"] == 2:
-            print("Displaying 2D image")
             self.session_cfg["ndim"] = 3
             self.session_cfg["shape"] = np.insert(self.session_cfg["shape"], 0, 1)
 

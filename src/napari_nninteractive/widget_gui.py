@@ -51,7 +51,7 @@ class BaseGUI(QWidget):
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self._viewer = viewer
         self.session_cfg = None
-        
+
         # Initialize with an empty option for object names
         self.object_names = [""]
 
@@ -207,7 +207,7 @@ class BaseGUI(QWidget):
             tooltips="Keep current segmentation and go to the next object - press M",
             shortcut="M",
         )
-        
+
         # Add Reset All button
         self.reset_all_button = setup_iconbutton(
             _layout,
@@ -217,21 +217,21 @@ class BaseGUI(QWidget):
             self.on_reset_all,
             tooltips="Reset the plugin to initial state and close all layers",
         )
-        
+
         # Add object naming dropdown
         h_layout = QHBoxLayout()
         _layout.addLayout(h_layout)
-        
+
         name_label = setup_label(h_layout, "Object Name:", stretch=2)
         name_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
-        
+
         self.object_name_combo = QComboBox()
         self.object_name_combo.addItems(self.object_names)
         self.object_name_combo.setEditable(True)
         self.object_name_combo.setToolTip("Select or enter a name for the current object")
         self.object_name_combo.currentTextChanged.connect(self.on_object_name_selected)
         h_layout.addWidget(self.object_name_combo, stretch=5)
-        
+
         # Add button to add the current name to the dropdown list
         self.add_name_button = setup_iconbutton(
             h_layout,
@@ -328,7 +328,7 @@ class BaseGUI(QWidget):
             True,
             function=self.on_propagate_ckbx,
         )
-        
+
         self.center_on_labels_ckbx = setup_checkbox(
             checkbox_layout,
             "autocenter",
@@ -392,7 +392,7 @@ class BaseGUI(QWidget):
         self.export_button = setup_iconbutton(
             _layout, "Export", "pop_out", self._viewer.theme, self._export
         )
-        
+
         # Add a checkbox to toggle separate OME-Zarr file export
         self.separate_omezarr_ckbx = setup_checkbox(
             _layout,
@@ -400,7 +400,7 @@ class BaseGUI(QWidget):
             True,
             tooltips="When checked, export ONLY as OME-Zarr files. When unchecked, export in original format."
         )
-        
+
         # Add a checkbox to reset after export
         self.reset_after_export_ckbx = setup_checkbox(
             _layout,
@@ -408,7 +408,7 @@ class BaseGUI(QWidget):
             False,
             tooltips="When checked, reset the plugin to initial state and close all layers after export"
         )
-        
+
         _group_box.setLayout(_layout)
         return _group_box
 
@@ -451,7 +451,7 @@ class BaseGUI(QWidget):
     def on_propagate_ckbx(self, *args, **kwargs):
         """Handle changes to the auto-zoom checkbox."""
         pass
-        
+
     def on_center_on_labels_ckbx(self, *args, **kwargs):
         """Handle changes to the center on labels checkbox."""
         pass
@@ -461,13 +461,13 @@ class BaseGUI(QWidget):
 
     def add_mask_init_layer(self):
         pass
-        
+
     def on_object_name_selected(self, text=None, *args, **kwargs) -> None:
         """Called when a new object name is selected from the dropdown."""
         # If text is provided by the signal, use it, otherwise get from combobox
         object_name = text if text is not None else self.object_name_combo.currentText()
         print("on_object_name_selected", object_name)
-        
+
     def on_add_object_name(self, *args, **kwargs) -> None:
         """Add the current text in the combobox to the list of names if it's not already present."""
         current_text = self.object_name_combo.currentText().strip()
@@ -478,12 +478,12 @@ class BaseGUI(QWidget):
                 # Add to our persistent list
                 if current_text not in self.object_names:
                     self.object_names.append(current_text)
-            
+
             # Select the current text (makes it the current item)
             index = self.object_name_combo.findText(current_text)
             if index >= 0:
                 self.object_name_combo.setCurrentIndex(index)
-                
+
             # Update the current object's name with the selected text
             self.on_object_name_selected(current_text)
 
@@ -497,24 +497,24 @@ class BaseGUI(QWidget):
         """
         # Save object names before reset
         saved_object_names = self.object_names.copy()
-        
+
         # Reset session
         self._clear_layers()
         self._unlock_session()
-        
+
         # Close all layers in the viewer
         layer_names = list(self._viewer.layers.copy())
         for layer in layer_names:
             self._viewer.layers.remove(layer)
-        
+
         # Restore object names
         self.object_names = saved_object_names
         self.object_name_combo.clear()
         self.object_name_combo.addItems(self.object_names)
-        
+
         # Reset session
         self.session_cfg = None
-        
+
         # Set prompt back to positive
         self.prompt_button._uncheck()
         self.prompt_button._check(0)
