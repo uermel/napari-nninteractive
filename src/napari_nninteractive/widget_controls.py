@@ -542,13 +542,33 @@ class LayerControls(BaseGUI):
                 # reverse the corrections for non-orthogonal data and convert dummy 3d back to 2d
                 _data = _layer.data[0] if self.session_cfg["ndim_source"] == 2 else _layer.data
 
+                # Debug info for checking data
+                print(f"Layer {_layer.name}: Shape={_data.shape}, Min={np.min(_data)}, Max={np.max(_data)}, Sum={np.sum(_data)}")
+
+                # Create a binary mask for the current object (all non-zero values are set to 1)
+                # Important: Make a copy to avoid modifying the original data
+                binary_mask = np.copy(_data)
+                if np.max(binary_mask) > 1:
+                    # If the data contains values > 1, normalize to binary mask
+                    binary_mask = (binary_mask > 0).astype(np.uint8)
+                elif binary_mask.dtype != np.uint8:
+                    # Ensure the dtype is uint8 as expected by many programs
+                    binary_mask = binary_mask.astype(np.uint8)
+
+                # Verify the mask has content (debugging)
+                if np.sum(binary_mask) == 0:
+                    print(f"Warning: Mask for object {_index} is empty. Original data sum: {np.sum(_data)}")
+                    print(f"Data type: {_data.dtype}, Binary mask type: {binary_mask.dtype}")
+                else:
+                    print(f"Mask for object {_index} has {np.sum(binary_mask)} non-zero elements")
+
                 # Save in original format only if zarr export is not enabled
                 if not export_as_omezarr:
                     _file_name = f"{_output_file}_{str(_index).zfill(4)}{name_suffix}{_dtype}"
                     _file = str(Path(_output_dir).joinpath(_file_name))
 
                     _layer_temp = Labels(
-                        _data,
+                        binary_mask,
                         name="_temp",
                         affine=self.session_cfg["affine_source"],
                         scale=self.source_cfg["scale"],
@@ -571,9 +591,6 @@ class LayerControls(BaseGUI):
                         import zarr
                         import numpy as np
 
-                        # Create a binary mask for the current object (all non-zero values are set to 1)
-                        binary_mask = (_data > 0).astype(np.uint8)
-
                         # Create OME-Zarr file path with object name if it exists
                         _zarr_file_name = f"{_output_file}_{str(_index).zfill(4)}{name_suffix}.zarr"
                         _zarr_path = Path(_output_dir).joinpath(_zarr_file_name)
@@ -581,15 +598,27 @@ class LayerControls(BaseGUI):
                         # Create the zarr store with proper OME-Zarr v0.4 structure
                         root = zarr.open(str(_zarr_path), mode='w')
 
-                        # Save the binary mask directly at the root level as "labels" array
-                        # napari expects the data at this level
+                        # Save the binary mask at the expected location with appropriate chunking
                         chunk_size = (128, 128, 128) if len(binary_mask.shape) == 3 else (128, 128)
+                        
+                        # Ensure the data isn't being lost during conversion
+                        if np.max(binary_mask) > 0:
+                            print(f"Max value before storage: {np.max(binary_mask)}")
+                        
+                        # Store the data with explicit zarr parameters to ensure proper serialization
                         mask_dataset = root.create_dataset(
                             '0',  # Use '0' as the main image dataset name
                             data=binary_mask,
                             chunks=chunk_size,
-                            dtype=np.uint8
+                            dtype=np.uint8,
+                            compressor=zarr.Blosc(cname='zstd', clevel=3),
+                            fill_value=0
                         )
+                        
+                        # Verify the data was stored correctly
+                        stored_sum = np.sum(mask_dataset[:])
+                        if stored_sum == 0 and np.sum(binary_mask) > 0:
+                            print(f"Error: Data lost during zarr storage. Original sum: {np.sum(binary_mask)}, stored sum: {stored_sum}")
 
                         # Add OME-Zarr metadata including object name if it exists
                         layer_display_name = f"Object {_index}"
