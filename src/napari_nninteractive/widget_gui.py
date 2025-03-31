@@ -497,6 +497,8 @@ class BaseGUI(QWidget):
         """
         # Save object names before reset
         saved_object_names = self.object_names.copy()
+        # Save currently selected object name
+        current_object_name = self.object_name_combo.currentText()
 
         # Reset session
         self._clear_layers()
@@ -511,6 +513,12 @@ class BaseGUI(QWidget):
         self.object_names = saved_object_names
         self.object_name_combo.clear()
         self.object_name_combo.addItems(self.object_names)
+        
+        # Restore the previously selected object name
+        if current_object_name and current_object_name in self.object_names:
+            index = self.object_name_combo.findText(current_object_name)
+            if index >= 0:
+                self.object_name_combo.setCurrentIndex(index)
 
         # Reset session
         self.session_cfg = None
