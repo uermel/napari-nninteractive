@@ -168,8 +168,8 @@ class nnInteractiveWidget(LayerControls):
                 
             # Center on labels if enabled - use a short timer to ensure axis change is complete
             if hasattr(self, 'center_on_labels_ckbx') and self.center_on_labels_ckbx.isChecked():
-                # Use Qt timer for a short delay to ensure the axis change is complete
-                QTimer.singleShot(50, self._center_on_labels)
+                # Use Qt timer for a longer delay to ensure the axis change is fully complete
+                QTimer.singleShot(150, self._center_on_labels)
 
     def _center_on_labels(self):
         """Center the camera view on the center of mass of current label layer"""
@@ -208,10 +208,14 @@ class nnInteractiveWidget(LayerControls):
             # Update the viewer position for non-displayed dimensions
             self._viewer.dims.current_step = tuple(current_step)
             
-            # Center the camera on the center of mass for displayed dimensions
-            displayed_center = np.array([center_of_mass[dim] for dim in displayed_dims])
+            # Ensure camera.center is updated with the correct dimensional mapping
+            # Extract coordinates for displayed dimensions to create center point
+            displayed_center = np.zeros(len(displayed_dims))
+            for i, dim in enumerate(displayed_dims):
+                if dim < ndim:
+                    displayed_center[i] = center_of_mass[dim]
             
-            # Set the center explicitly (this works for both 2D and 3D)
+            # Set the camera center and ensure it takes effect immediately
             self._viewer.camera.center = displayed_center
             
             # Calculate the size of the bounding box in displayed dimensions
@@ -230,9 +234,11 @@ class nnInteractiveWidget(LayerControls):
                     max_size = max(bbox_sizes) * 1.4
                     
                     # Set a reasonable zoom factor based on the bounding box size
-                    # Use a fallback approach that doesn't depend on canvas.size()
                     if max_size > 0:
                         self._viewer.camera.zoom = 800 / max_size
+                    
+            # Force immediate camera update
+            self._viewer.reset_view()
 
     def on_reset_all(self, *args, **kwargs):
         """Reset the plugin to initial state and close all layers, preserving object names"""
