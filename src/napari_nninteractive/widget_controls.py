@@ -603,23 +603,87 @@ class LayerControls(BaseGUI):
 
                         # Add coordinate metadata
                         axes = []
+                        
+                        # Try to get unit from metadata
+                        unit = 'angstrom'  # Default unit
+                        if hasattr(_layer, 'metadata') and _layer.metadata:
+                            if isinstance(_layer.metadata, dict):
+                                # Try to find unit in metadata
+                                unit_from_meta = _layer.metadata.get('unit', None)
+                                if unit_from_meta:
+                                    unit = unit_from_meta
+                        
                         if len(binary_mask.shape) == 3:
                             axes = [
-                                {'name': 'z', 'type': 'space'},
-                                {'name': 'y', 'type': 'space'},
-                                {'name': 'x', 'type': 'space'}
+                                {'name': 'z', 'type': 'space', 'unit': unit},
+                                {'name': 'y', 'type': 'space', 'unit': unit},
+                                {'name': 'x', 'type': 'space', 'unit': unit}
                             ]
                         else:
                             axes = [
-                                {'name': 'y', 'type': 'space'},
-                                {'name': 'x', 'type': 'space'}
+                                {'name': 'y', 'type': 'space', 'unit': unit},
+                                {'name': 'x', 'type': 'space', 'unit': unit}
                             ]
+
+                        # Get scale from the source configuration or layer
+                        # First try to get from layer directly
+                        if hasattr(_layer, 'scale') and _layer.scale is not None:
+                            scale = list(_layer.scale)
+                        # If not available, fall back to source_cfg
+                        else:
+                            scale = self.source_cfg.get("scale", None)
+                            
+                        # Ensure we have a list not a tuple or other sequence
+                        if scale is not None:
+                            scale = list(scale)
+                        else:
+                            # Default to 1.0 for each dimension if no scale info available
+                            scale = [1.0] * len(binary_mask.shape)
+                            
+                        # Create datasets with coordinate transformations including scale
+                        datasets = []
+                        # Add the base resolution (path "0")
+                        datasets.append({
+                            'path': '0',
+                            'coordinateTransformations': [
+                                {
+                                    'type': 'scale',
+                                    'scale': scale
+                                }
+                            ]
+                        })
+                        
+                        # Create pyramid levels for multiscale representation (for future compatibility)
+                        # Level 1 (2x downsample)
+                        scale_level1 = [s * 2 for s in scale]
+                        datasets.append({
+                            'path': '1',  # This is just metadata, we're not creating this dataset yet
+                            'coordinateTransformations': [
+                                {
+                                    'type': 'scale',
+                                    'scale': scale_level1
+                                }
+                            ]
+                        })
+                        
+                        # Level 2 (4x downsample)
+                        scale_level2 = [s * 4 for s in scale]
+                        datasets.append({
+                            'path': '2',  # This is just metadata, we're not creating this dataset yet
+                            'coordinateTransformations': [
+                                {
+                                    'type': 'scale',
+                                    'scale': scale_level2
+                                }
+                            ]
+                        })
 
                         multiscales = [{
                             'version': '0.4',
                             'name': layer_display_name,
                             'axes': axes,
-                            'datasets': [{'path': '0'}]
+                            'datasets': datasets,
+                            'metadata': {}
                         }]
 
                         root.attrs['multiscales'] = multiscales
