@@ -468,6 +468,8 @@ class LayerControls(BaseGUI):
         """Export all Label layers belonging to the current image & model pair.
         When the 'Export as separate OME-Zarr files' option is checked (default),
         exports ONLY as OME-Zarr files. When unchecked, exports in the original format."""
+        import numpy as np  # Import numpy locally to avoid scope issues
+        
         _img_layer = self._viewer.layers[self.session_cfg["name"]]
 
         # Handle cases where the image might not have a source path
@@ -548,6 +550,13 @@ class LayerControls(BaseGUI):
                 # Create a binary mask for the current object (all non-zero values are set to 1)
                 # Important: Make a copy to avoid modifying the original data
                 binary_mask = np.copy(_data)
+                
+                # Ensure we have some data in the mask
+                # Check for completely empty layer
+                if np.max(binary_mask) == 0:
+                    print(f"Warning: Layer {_layer.name} is completely empty (all zeros). Skipping export.")
+                    continue
+                    
                 if np.max(binary_mask) > 1:
                     # If the data contains values > 1, normalize to binary mask
                     binary_mask = (binary_mask > 0).astype(np.uint8)
@@ -589,8 +598,8 @@ class LayerControls(BaseGUI):
                 if export_as_omezarr:
                     try:
                         import zarr
-                        import numpy as np
-
+                        # Don't reimport numpy, it's already imported at method level
+                        
                         # Create OME-Zarr file path with object name if it exists
                         _zarr_file_name = f"{_output_file}_{str(_index).zfill(4)}{name_suffix}.zarr"
                         _zarr_path = Path(_output_dir).joinpath(_zarr_file_name)
@@ -605,6 +614,14 @@ class LayerControls(BaseGUI):
                         if np.max(binary_mask) > 0:
                             print(f"Max value before storage: {np.max(binary_mask)}")
                         
+                        # Explicitly force binary_mask to uint8 again before storage
+                        binary_mask = binary_mask.astype(np.uint8)
+                        
+                        # Double-check mask isn't empty
+                        if np.sum(binary_mask) == 0:
+                            print(f"Warning: Binary mask for {_layer.name} is unexpectedly empty. Skipping zarr export.")
+                            continue
+                        
                         # Store the data with explicit zarr parameters to ensure proper serialization
                         mask_dataset = root.create_dataset(
                             '0',  # Use '0' as the main image dataset name
@@ -616,9 +633,16 @@ class LayerControls(BaseGUI):
                         )
                         
                         # Verify the data was stored correctly
-                        stored_sum = np.sum(mask_dataset[:])
-                        if stored_sum == 0 and np.sum(binary_mask) > 0:
-                            print(f"Error: Data lost during zarr storage. Original sum: {np.sum(binary_mask)}, stored sum: {stored_sum}")
+                        try:
+                            stored_data = mask_dataset[:]
+                            stored_sum = np.sum(stored_data)
+                            stored_max = np.max(stored_data)
+                            print(f"Zarr dataset created: sum={stored_sum}, max={stored_max}")
+                            
+                            if stored_sum == 0 and np.sum(binary_mask) > 0:
+                                print(f"Error: Data lost during zarr storage. Original sum: {np.sum(binary_mask)}, stored sum: {stored_sum}")
+                        except Exception as e:
+                            print(f"Error verifying stored data: {e}")
 
                         # Add OME-Zarr metadata including object name if it exists
                         layer_display_name = f"Object {_index}"
