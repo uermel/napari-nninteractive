@@ -598,74 +598,70 @@ class LayerControls(BaseGUI):
                 if export_as_omezarr:
                     try:
                         import zarr
-                        # Don't reimport numpy, it's already imported at method level
+                        
+                        # Ensure we have valid data before proceeding
+                        if np.sum(binary_mask) == 0:
+                            print(f"Layer {_layer.name} has no non-zero pixels. Skipping export.")
+                            continue
+                        
+                        print(f"Exporting layer {_layer.name} with shape {binary_mask.shape} and {np.sum(binary_mask)} non-zero pixels")
                         
                         # Create OME-Zarr file path with object name if it exists
                         _zarr_file_name = f"{_output_file}_{str(_index).zfill(4)}{name_suffix}.zarr"
                         _zarr_path = Path(_output_dir).joinpath(_zarr_file_name)
-
-                        # Create the zarr store with proper OME-Zarr v0.4 structure
-                        root = zarr.open(str(_zarr_path), mode='w')
-
-                        # Save the binary mask at the expected location with appropriate chunking
-                        chunk_size = (128, 128, 128) if len(binary_mask.shape) == 3 else (128, 128)
                         
-                        # Ensure the data isn't being lost during conversion
-                        if np.max(binary_mask) > 0:
-                            print(f"Max value before storage: {np.max(binary_mask)}")
+                        # Clean up any existing file to avoid conflicts
+                        if _zarr_path.exists():
+                            import shutil
+                            shutil.rmtree(str(_zarr_path))
                         
-                        # Explicitly force binary_mask to uint8 again before storage
-                        binary_mask = binary_mask.astype(np.uint8)
+                        # Open the zarr store directly
+                        store = zarr.DirectoryStore(str(_zarr_path))
+                        root = zarr.group(store=store, overwrite=True)
                         
-                        # Double-check mask isn't empty
-                        if np.sum(binary_mask) == 0:
-                            print(f"Warning: Binary mask for {_layer.name} is unexpectedly empty. Skipping zarr export.")
-                            continue
+                        # Create chunk size appropriate for the data
+                        chunk_size = (64, 64, 64) if len(binary_mask.shape) == 3 else (64, 64)
                         
-                        # Store the data with explicit zarr parameters to ensure proper serialization
-                        mask_dataset = root.create_dataset(
-                            '0',  # Use '0' as the main image dataset name
-                            data=binary_mask,
+                        # Create the dataset with explicit parameters
+                        z_arr = root.create_dataset(
+                            '0',
+                            shape=binary_mask.shape,
                             chunks=chunk_size,
                             dtype=np.uint8,
-                            compressor=zarr.Blosc(cname='zstd', clevel=3),
-                            fill_value=0
                         )
                         
-                        # Verify the data was stored correctly
-                        try:
-                            stored_data = mask_dataset[:]
-                            stored_sum = np.sum(stored_data)
-                            stored_max = np.max(stored_data)
-                            print(f"Zarr dataset created: sum={stored_sum}, max={stored_max}")
-                            
-                            if stored_sum == 0 and np.sum(binary_mask) > 0:
-                                print(f"Error: Data lost during zarr storage. Original sum: {np.sum(binary_mask)}, stored sum: {stored_sum}")
-                        except Exception as e:
-                            print(f"Error verifying stored data: {e}")
-
-                        # Add OME-Zarr metadata including object name if it exists
-                        layer_display_name = f"Object {_index}"
-                        if object_name:
-                            layer_display_name = f"{layer_display_name} ({object_name})"
-
-                        root.attrs['omero'] = {
-                            'name': f'{layer_display_name} - {self.session_cfg["name"]}',
-                            'version': '0.4'  # Use a stable version
-                        }
-
-                        # Add coordinate metadata
-                        axes = []
+                        # Write data directly
+                        z_arr[:] = binary_mask
                         
-                        # Try to get unit from metadata
+                        # Verify data was written correctly
+                        verification = np.array(z_arr[:])
+                        print(f"Verification: sum={np.sum(verification)}, max={np.max(verification)}")
+                        
+                        if np.sum(verification) == 0:
+                            print(f"ERROR: Failed to write data to zarr file - all zeros")
+                        
+                        # Get scale from the source configuration or layer
+                        if hasattr(_layer, 'scale') and _layer.scale is not None:
+                            scale = list(_layer.scale)
+                        else:
+                            scale = self.source_cfg.get("scale", None)
+                            
+                        # Ensure scale is a list of floats
+                        if scale is not None:
+                            scale = [float(s) for s in scale]
+                        else:
+                            # Default to 1.0 for each dimension
+                            scale = [1.0] * len(binary_mask.shape)
+                        
+                        # Get unit from metadata or use default
                         unit = 'angstrom'  # Default unit
                         if hasattr(_layer, 'metadata') and _layer.metadata:
                             if isinstance(_layer.metadata, dict):
-                                # Try to find unit in metadata
                                 unit_from_meta = _layer.metadata.get('unit', None)
                                 if unit_from_meta:
                                     unit = unit_from_meta
                         
+                        # Create axes based on dimensionality
                         if len(binary_mask.shape) == 3:
                             axes = [
                                 {'name': 'z', 'type': 'space', 'unit': unit},
@@ -677,24 +673,9 @@ class LayerControls(BaseGUI):
                                 {'name': 'y', 'type': 'space', 'unit': unit},
                                 {'name': 'x', 'type': 'space', 'unit': unit}
                             ]
-
-                        # Get scale from the source configuration or layer
-                        # First try to get from layer directly
-                        if hasattr(_layer, 'scale') and _layer.scale is not None:
-                            scale = list(_layer.scale)
-                        # If not available, fall back to source_cfg
-                        else:
-                            scale = self.source_cfg.get("scale", None)
-                            
-                        # Ensure we have a list not a tuple or other sequence
-                        if scale is not None:
-                            scale = list(scale)
-                        else:
-                            # Default to 1.0 for each dimension if no scale info available
-                            scale = [1.0] * len(binary_mask.shape)
-                            
-                        # Create datasets with coordinate transformations including scale
-                        datasets = [{
+                        
+                        # Create simple dataset entry with the right scale
+                        dataset = {
                             'path': '0',
                             'coordinateTransformations': [
                                 {
@@ -702,35 +683,37 @@ class LayerControls(BaseGUI):
                                     'scale': scale
                                 }
                             ]
-                        }]
+                        }
                         
-                        # Note: We're only including the dataset that we actually create
-                        # We don't add the pyramid levels to the metadata since they're not being created
-                        # This prevents errors with tools that expect all declared datasets to exist
-                        
-                        # TODO: In the future, consider implementing true multiscale pyramid support by
-                        # creating downsampled versions of the data and adding them as separate datasets
-                        # in the zarr store (e.g., '1', '2', etc.). This would improve performance for
-                        # large datasets when viewed at different zoom levels.
-                        
+                        # Build multiscales metadata
                         multiscales = [{
                             'version': '0.4',
-                            'name': layer_display_name,
+                            'name': f"Object {_index}",
                             'axes': axes,
-                            'datasets': datasets,
+                            'datasets': [dataset],
                             'metadata': {}
                         }]
-
+                        
+                        # Set required zarr attributes
                         root.attrs['multiscales'] = multiscales
-
-                    except ImportError:
-                        from napari.utils.notifications import show_warning
-                        show_warning(
-                            "Cannot export as OME-Zarr: zarr package is not installed. "
-                            "Install it with 'pip install zarr'."
-                        )
+                        
+                        # Add omero metadata
+                        layer_display_name = f"Object {_index}"
+                        if object_name:
+                            layer_display_name = f"{layer_display_name} ({object_name})"
+                            
+                        root.attrs['omero'] = {
+                            'name': f'{layer_display_name} - {self.session_cfg["name"]}',
+                            'version': '0.4'
+                        }
+                        
+                        print(f"Successfully created zarr file at {_zarr_path}")
+                        
                     except Exception as e:
                         from napari.utils.notifications import show_warning
+                        import traceback
+                        traceback_str = traceback.format_exc()
+                        print(f"Error exporting zarr file: {str(e)}\n{traceback_str}")
                         show_warning(f"Error exporting OME-Zarr file: {str(e)}")
 
             # Check if reset after export is enabled
