@@ -641,9 +641,7 @@ class LayerControls(BaseGUI):
                             scale = [1.0] * len(binary_mask.shape)
                             
                         # Create datasets with coordinate transformations including scale
-                        datasets = []
-                        # Add the base resolution (path "0")
-                        datasets.append({
+                        datasets = [{
                             'path': '0',
                             'coordinateTransformations': [
                                 {
@@ -651,33 +649,17 @@ class LayerControls(BaseGUI):
                                     'scale': scale
                                 }
                             ]
-                        })
+                        }]
                         
-                        # Create pyramid levels for multiscale representation (for future compatibility)
-                        # Level 1 (2x downsample)
-                        scale_level1 = [s * 2 for s in scale]
-                        datasets.append({
-                            'path': '1',  # This is just metadata, we're not creating this dataset yet
-                            'coordinateTransformations': [
-                                {
-                                    'type': 'scale',
-                                    'scale': scale_level1
-                                }
-                            ]
-                        })
+                        # Note: We're only including the dataset that we actually create
+                        # We don't add the pyramid levels to the metadata since they're not being created
+                        # This prevents errors with tools that expect all declared datasets to exist
                         
-                        # Level 2 (4x downsample)
-                        scale_level2 = [s * 4 for s in scale]
-                        datasets.append({
-                            'path': '2',  # This is just metadata, we're not creating this dataset yet
-                            'coordinateTransformations': [
-                                {
-                                    'type': 'scale',
-                                    'scale': scale_level2
-                                }
-                            ]
-                        })
-
+                        # TODO: In the future, consider implementing true multiscale pyramid support by
+                        # creating downsampled versions of the data and adding them as separate datasets
+                        # in the zarr store (e.g., '1', '2', etc.). This would improve performance for
+                        # large datasets when viewed at different zoom levels.
+                        
                         multiscales = [{
                             'version': '0.4',
                             'name': layer_display_name,
