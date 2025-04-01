@@ -511,8 +511,8 @@ class LayerControls(BaseGUI):
                         prefix="object ",
                         postfix=f" - {self.session_cfg['name']}",
                     )
-                    # No object name for the current working layer
-                    object_name = ""
+                    # Get the current object name from the combo box for the active layer
+                    object_name = self.object_name_combo.currentText().strip()
                 elif _layer.name.startswith("object ") and _layer.name.endswith(
                     f" - {self.session_cfg['name']}"
                 ):
